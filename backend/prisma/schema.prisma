@@ -1,0 +1,149 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model TaiKhoan {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @map("id") @db.Uuid
+  email        String    @unique @map("email") @db.VarChar(100)
+  matKhau      String    @map("matkhau") @db.VarChar(255)
+  role         String    @map("role") @db.VarChar(20)
+  trangThai    String?   @default("Active") @map("trangthai") @db.VarChar(20)
+  ngayTao      DateTime? @default(now()) @map("ngaytao") @db.Timestamp(6)
+  ngayCapNhat  DateTime? @default(now()) @updatedAt @map("ngaycapnhat") @db.Timestamp(6)
+  dangKysDuyet DangKy[]
+  giaSu        GiaSu?
+  hocVien      HocVien?
+
+  @@map("taikhoan")
+}
+
+model MonHoc {
+  maMon   String   @id @default(dbgenerated("gen_random_uuid()")) @map("mamon") @db.Uuid
+  tenMon  String   @unique @map("tenmon") @db.VarChar(100)
+  moTa    String?  @map("mota")
+  lopHocs LopHoc[]
+
+  @@map("monhoc")
+}
+
+model GiaSu {
+  maGiaSu     String            @id @default(dbgenerated("gen_random_uuid()")) @map("magiasu") @db.Uuid
+  taiKhoanId  String            @unique @map("taikhoanid") @db.Uuid
+  hoTen       String            @map("hoten") @db.VarChar(100)
+  soDienThoai String?           @map("sodienthoai") @db.VarChar(15)
+  hinhAnh     String?           @map("hinhanh") @db.VarChar(255)
+  chuyenMon   String?           @map("chuyenmon") @db.VarChar(255)
+  kinhNghiem  String?           @map("kinhnghiem") @db.VarChar(50)
+  trinhDo     String?           @map("trinhdo") @db.VarChar(100)
+  gioiThieu   String?           @map("gioithieu")
+  ngayTao     DateTime?         @default(now()) @map("ngaytao") @db.Timestamp(6)
+  diaChi      String?           @map("diachi") @db.VarChar(255)
+  namSinh     Int?              @map("namsinh")
+  danhGias    DanhGia[]
+  taiKhoan    TaiKhoan          @relation(fields: [taiKhoanId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  hopDongs    HopDongGiangDay[]
+
+  @@map("giasu")
+}
+
+model HocVien {
+  maHocVien   String    @id @default(dbgenerated("gen_random_uuid()")) @map("mahocvien") @db.Uuid
+  taiKhoanId  String    @unique @map("taikhoanid") @db.Uuid
+  hoTen       String    @map("hoten") @db.VarChar(100)
+  namSinh     Int?      @map("namsinh")
+  soDienThoai String?   @map("sodienthoai") @db.VarChar(15)
+  diaChi      String?   @map("diachi") @db.VarChar(255)
+  hinhAnh     String?   @map("hinhanh") @db.VarChar(255)
+  ngayTao     DateTime? @default(now()) @map("ngaytao") @db.Timestamp(6)
+  dangKys     DangKy[]
+  danhGias    DanhGia[]
+  taiKhoan    TaiKhoan  @relation(fields: [taiKhoanId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("hocvien")
+}
+
+model LopHoc {
+  maLop        String            @id @default(dbgenerated("gen_random_uuid()")) @map("malop") @db.Uuid
+  maMon        String            @map("mamon") @db.Uuid
+  tenLop       String            @map("tenlop") @db.VarChar(150)
+  hocPhi       Decimal           @map("hocphi") @db.Decimal(12, 2)
+  moTa         String?           @map("mota")
+  hinhThuc     String?           @default("Offline") @map("hinhthuc") @db.VarChar(20)
+  soBuoiDuKien Int?              @map("sobuoidukien")
+  trangThai    String?           @default("DangTuyen") @map("trangthai") @db.VarChar(20)
+  ngayBatDau   DateTime?         @map("ngaybatdau") @db.Date
+  ngayKetThuc  DateTime?         @map("ngayketthuc") @db.Date
+  ngayTao      DateTime?         @default(now()) @map("ngaytao") @db.Timestamp(6)
+  dangKys      DangKy[]
+  danhGias     DanhGia[]
+  hopDongs     HopDongGiangDay[]
+  lichHocs     LichHoc[]
+  monHoc       MonHoc            @relation(fields: [maMon], references: [maMon], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("lophoc")
+}
+
+model DangKy {
+  maDangKy      String    @id @default(dbgenerated("gen_random_uuid()")) @map("madangky") @db.Uuid
+  maHocVien     String    @map("mahocvien") @db.Uuid
+  maLop         String    @map("malop") @db.Uuid
+  yeuCauThem    String?   @map("yeucauthem")
+  ngayDangKy    DateTime? @default(now()) @map("ngaydangky") @db.Timestamp(6)
+  trangThai     String?   @default("ChoDuyet") @map("trangthai") @db.VarChar(20)
+  nguoiDuyet    String?   @map("nguoiduyet") @db.Uuid
+  ngayDuyet     DateTime? @map("ngayduyet") @db.Timestamp(6)
+  lyDoTuChoi    String?   @map("lydotuchoi")
+  hocVien       HocVien   @relation(fields: [maHocVien], references: [maHocVien], onDelete: Cascade, onUpdate: NoAction)
+  lopHoc        LopHoc    @relation(fields: [maLop], references: [maLop], onDelete: Cascade, onUpdate: NoAction)
+  nguoiDuyetRef TaiKhoan? @relation(fields: [nguoiDuyet], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([maHocVien, maLop])
+  @@map("dangky")
+}
+
+model HopDongGiangDay {
+  maHopDong    String    @id @default(dbgenerated("gen_random_uuid()")) @map("mahopdong") @db.Uuid
+  maGiaSu      String    @map("magiasu") @db.Uuid
+  maLop        String    @map("malop") @db.Uuid
+  luongTheoGio Decimal   @map("luongtheogio") @db.Decimal(12, 2)
+  ngayNhanLop  DateTime? @default(now()) @map("ngaynhanlop") @db.Timestamp(6)
+  trangThai    String?   @default("DangDay") @map("trangthai") @db.VarChar(20)
+  giaSu        GiaSu     @relation(fields: [maGiaSu], references: [maGiaSu], onDelete: Cascade, onUpdate: NoAction)
+  lopHoc       LopHoc    @relation(fields: [maLop], references: [maLop], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([maGiaSu, maLop])
+  @@map("hopdonggiangday")
+}
+
+model LichHoc {
+  maLich        String   @id @default(dbgenerated("gen_random_uuid()")) @map("malich") @db.Uuid
+  maLop         String   @map("malop") @db.Uuid
+  thu           Int?     @map("thu")
+  gioBatDau     DateTime @map("giobatdau") @db.Time(6)
+  gioKetThuc    DateTime @map("gioketthuc") @db.Time(6)
+  phongHoc      String?  @map("phonghoc") @db.VarChar(50)
+  linkHocOnline String?  @map("linkhoconline") @db.VarChar(255)
+  lopHoc        LopHoc   @relation(fields: [maLop], references: [maLop], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("lichhoc")
+}
+
+model DanhGia {
+  maDanhGia   String    @id @default(dbgenerated("gen_random_uuid()")) @map("madanhgia") @db.Uuid
+  maHocVien   String    @map("mahocvien") @db.Uuid
+  maGiaSu     String    @map("magiasu") @db.Uuid
+  maLop       String?   @map("malop") @db.Uuid
+  diem        Float?    @map("diem")
+  nhanXet     String?   @map("nhanxet")
+  ngayDanhGia DateTime? @default(now()) @map("ngaydanhgia") @db.Timestamp(6)
+  giaSu       GiaSu     @relation(fields: [maGiaSu], references: [maGiaSu], onDelete: NoAction, onUpdate: NoAction)
+  hocVien     HocVien   @relation(fields: [maHocVien], references: [maHocVien], onDelete: NoAction, onUpdate: NoAction)
+  lopHoc      LopHoc?   @relation(fields: [maLop], references: [maLop], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("danhgia")
+}

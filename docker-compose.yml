@@ -1,0 +1,72 @@
+version: "3.8"
+
+services:
+  # ========== PostgreSQL Database ==========
+  postgres:
+    image: postgres:16-alpine
+    container_name: ttgs-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+      POSTGRES_DB: trung_tam_gia_su
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ttgs-network
+
+  # ========== Backend API ==========
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ttgs-backend
+    environment:
+      NODE_ENV: development
+      PORT: 5000
+      DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/trung_tam_gia_su?schema=public
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      JWT_EXPIRES_IN: 7d
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    command: sh -c "npx prisma generate && npm run dev"
+    networks:
+      - ttgs-network
+
+  # ========== Frontend ==========
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ttgs-frontend
+    environment:
+      VITE_API_URL: http://localhost:5000/api
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm run dev -- --host
+    networks:
+      - ttgs-network
+
+volumes:
+  postgres_data:
+
+networks:
+  ttgs-network:
+    driver: bridge

@@ -1,0 +1,31 @@
+# DOCKERFILE - CONFIG BUILD IMAGE CHO BACKEND
+#
+# Tạo image Node.js chứa backend app
+# Dùng bởi: docker-compose.yml
+
+# Base image: Node.js 18 trên Alpine Linux (lightweight)
+FROM node:18-alpine
+
+# Set thư mục làm việc trong container
+WORKDIR /app
+
+# Copy package.json & package-lock.json từ máy tính vào container
+# Cần copy trước vì npm install phụ thuộc vào files này
+COPY package*.json ./
+
+# Install dependencies trong container
+RUN npm install
+
+# Copy tất cả source code vào container
+# Để sau npm install để tận dụng Docker cache layer
+COPY . .
+
+# Generate Prisma Client
+# (cần trước khi app chạy)
+RUN npm run prisma:generate
+
+# Expose port 5000 (cho Docker biết container expose cái port này)
+EXPOSE 5000
+
+# Command chạy khi container start
+CMD ["npm", "run", "dev"]
