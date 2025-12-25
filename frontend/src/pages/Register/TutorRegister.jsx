@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authAPI } from '../../api/services';
+import toast from 'react-hot-toast';
 import '../Login/Login.css';
 
 const TutorRegister = () => {
@@ -36,9 +37,11 @@ const TutorRegister = () => {
       const { token, taiKhoan } = await authAPI.registerTutor(formData);
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(taiKhoan));
-      navigate('/tutor');
+      toast.success('Đăng ký thành công! Chào mừng bạn đến với TutorViet 🎉');
+      setTimeout(() => navigate('/tutor'), 1500);
     } catch (err) {
       setError(err.response?.data?.message || 'Đăng ký thất bại');
+      toast.error(err.response?.data?.message || 'Đăng ký thất bại');
     } finally {
       setLoading(false);
     }

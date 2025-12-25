@@ -37,6 +37,11 @@ export const adminAPI = {
     return data.data;
   },
 
+  getRevenueStats: async (params) => {
+    const { data } = await apiClient.get('/admin/dashboard/revenue', { params });
+    return data.data;
+  },
+
   // Quản lý tài khoản
   getAccounts: async (params) => {
     const { data } = await apiClient.get('/admin/tai-khoan', { params });

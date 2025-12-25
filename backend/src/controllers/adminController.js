@@ -7,6 +7,11 @@ import prisma from "../config/prisma.js";
 import bcrypt from "bcryptjs";
 import { successResponse, errorResponse, paginatedResponse } from "../utils/response.js";
 import { parsePagination } from "../utils/pagination.js";
+import { 
+  TRANG_THAI_LOP, 
+  TRANG_THAI_DANG_KY, 
+  TRANG_THAI_TINH_DOANH_THU 
+} from "../constants/status.js";
 
 /**
  * Dashboard statistics
@@ -21,52 +26,32 @@ export const getDashboard = async (req, res, next) => {
       tongLopHoc,
       lopDangTuyen,
       lopDangDay,
+      lopDaKetThuc,
+      lopDaHuy,
       dangKyChoDuyet,
     ] = await Promise.all([
       prisma.taiKhoan.count(),
       prisma.giaSu.count(),
       prisma.hocVien.count(),
       prisma.lopHoc.count(),
-      prisma.lopHoc.count({ where: { trangThai: "DangTuyen" } }),
-      prisma.lopHoc.count({ where: { trangThai: "DangDay" } }),
-      prisma.dangKy.count({ where: { trangThai: "ChoDuyet" } }),
+      prisma.lopHoc.count({ where: { trangThai: TRANG_THAI_LOP.DANG_TUYEN } }),
+      prisma.lopHoc.count({ where: { trangThai: TRANG_THAI_LOP.DANG_DAY } }),
+      prisma.lopHoc.count({ where: { trangThai: TRANG_THAI_LOP.KET_THUC } }),
+      prisma.lopHoc.count({ where: { trangThai: TRANG_THAI_LOP.HUY } }),
+      prisma.dangKy.count({ where: { trangThai: TRANG_THAI_DANG_KY.CHO_DUYET } }),
     ]);
 
-    // Tính doanh thu dự kiến (HocPhi × số học viên đã duyệt)
-    const lopHocList = await prisma.lopHoc.findMany({
-      where: { trangThai: "DangDay" },
-      include: {
-        _count: {
-          select: {
-            dangKys: {
-              where: { trangThai: "DaDuyet" },
-            },
-          },
-        },
+    // Tính tổng doanh thu (chỉ tính lớp đang dạy + đã kết thúc)
+    const tongDoanhThu = await prisma.lopHoc.aggregate({
+      where: {
+        trangThai: {
+          in: TRANG_THAI_TINH_DOANH_THU
+        }
+      },
+      _sum: {
+        hocPhi: true,
       },
     });
-
-    const doanhThuDuKien = lopHocList.reduce(
-      (sum, lop) => sum + Number(lop.hocPhi) * lop._count.dangKys,
-      0
-    );
-
-    // Tính chi phí dự kiến (LuongTheoGio × SoBuoiDuKien)
-    const hopDongList = await prisma.hopDongGiangDay.findMany({
-      where: { trangThai: "DangDay" },
-      include: {
-        lopHoc: {
-          select: { soBuoiDuKien: true },
-        },
-      },
-    });
-
-    const chiPhiDuKien = hopDongList.reduce(
-      (sum, hd) => sum + Number(hd.luongTheoGio) * (hd.lopHoc.soBuoiDuKien || 0),
-      0
-    );
-
-    const loiNhuanDuKien = doanhThuDuKien - chiPhiDuKien;
 
     return successResponse(res, {
       tongTaiKhoan,
@@ -75,10 +60,10 @@ export const getDashboard = async (req, res, next) => {
       tongLopHoc,
       lopDangTuyen,
       lopDangDay,
+      lopDaKetThuc,
+      lopDaHuy,
       dangKyChoDuyet,
-      doanhThuDuKien: Math.round(doanhThuDuKien),
-      chiPhiDuKien: Math.round(chiPhiDuKien),
-      loiNhuanDuKien: Math.round(loiNhuanDuKien),
+      tongDoanhThu: Math.round(Number(tongDoanhThu._sum.hocPhi || 0)),
     });
   } catch (error) {
     next(error);
@@ -378,7 +363,7 @@ export const getDanhSachLopHoc = async (req, res, next) => {
 export const ganGiaSuChoLop = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { maGiaSu, luongTheoGio } = req.body;
+    const { maGiaSu } = req.body;
 
     // Check lớp học exists
     const lopHoc = await prisma.lopHoc.findUnique({
@@ -415,7 +400,6 @@ export const ganGiaSuChoLop = async (req, res, next) => {
       data: {
         maGiaSu,
         maLop: id,
-        luongTheoGio: luongTheoGio || lopHoc.hocPhi,
       },
       include: {
         giaSu: {
@@ -545,6 +529,145 @@ export const getDanhSachDangKy = async (req, res, next) => {
     });
 
     return paginatedResponse(res, dangKyList, { page, limit, total });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Thống kê doanh thu theo thời gian
+ * GET /api/admin/dashboard/revenue
+ * Query params: period (day|month|year), year, month (optional)
+ */
+export const getRevenueStats = async (req, res, next) => {
+  try {
+    const { period = "month", year, month } = req.query;
+    
+    const currentYear = year ? parseInt(year) : new Date().getFullYear();
+    const currentMonth = month ? parseInt(month) : new Date().getMonth() + 1;
+
+    let groupBy;
+    let dateFilter = {};
+    let labels = [];
+    let rawData;
+
+    // Xây dựng filter theo năm/tháng
+    if (period === "day" && month) {
+      const startDate = new Date(currentYear, currentMonth - 1, 1);
+      const endDate = new Date(currentYear, currentMonth, 0, 23, 59, 59);
+      dateFilter = {
+        ngayTao: {
+          gte: startDate,
+          lte: endDate,
+        },
+      };
+    } else {
+      const startDate = new Date(currentYear, 0, 1);
+      const endDate = new Date(currentYear, 11, 31, 23, 59, 59);
+      dateFilter = {
+        ngayTao: {
+          gte: startDate,
+          lte: endDate,
+        },
+      };
+    }
+
+    // Lấy dữ liệu thô (chỉ tính lớp đang dạy + đã kết thúc)
+    const lopHocList = await prisma.lopHoc.findMany({
+      where: {
+        ...dateFilter,
+        trangThai: {
+          in: TRANG_THAI_TINH_DOANH_THU
+        }
+      },
+      select: {
+        hocPhi: true,
+        ngayTao: true,
+      },
+      orderBy: {
+        ngayTao: "asc",
+      },
+    });
+
+    // Xử lý dữ liệu theo period
+    if (period === "day") {
+      // Nhóm theo ngày trong tháng
+      const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+      const dataByDay = {};
+      
+      for (let d = 1; d <= daysInMonth; d++) {
+        dataByDay[d] = 0;
+        labels.push(`${d}/${currentMonth}`);
+      }
+
+      lopHocList.forEach((lop) => {
+        const day = new Date(lop.ngayTao).getDate();
+        dataByDay[day] += Number(lop.hocPhi);
+      });
+
+      rawData = Object.values(dataByDay);
+    } else if (period === "month") {
+      // Nhóm theo tháng trong năm
+      const dataByMonth = {};
+      const monthNames = ["T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10", "T11", "T12"];
+      
+      for (let m = 0; m < 12; m++) {
+        dataByMonth[m] = 0;
+        labels.push(monthNames[m]);
+      }
+
+      lopHocList.forEach((lop) => {
+        const month = new Date(lop.ngayTao).getMonth();
+        dataByMonth[month] += Number(lop.hocPhi);
+      });
+
+      rawData = Object.values(dataByMonth);
+    } else if (period === "year") {
+      // Nhóm theo năm (5 năm gần nhất)
+      const dataByYear = {};
+      
+      for (let y = currentYear - 4; y <= currentYear; y++) {
+        dataByYear[y] = 0;
+        labels.push(y.toString());
+      }
+
+      const allLopHoc = await prisma.lopHoc.findMany({
+        where: {
+          ngayTao: {
+            gte: new Date(currentYear - 4, 0, 1),
+            lte: new Date(currentYear, 11, 31, 23, 59, 59),
+          },
+          trangThai: {
+            in: TRANG_THAI_TINH_DOANH_THU
+          }
+        },
+        select: {
+          hocPhi: true,
+          ngayTao: true,
+        },
+      });
+
+      allLopHoc.forEach((lop) => {
+        const year = new Date(lop.ngayTao).getFullYear();
+        if (dataByYear[year] !== undefined) {
+          dataByYear[year] += Number(lop.hocPhi);
+        }
+      });
+
+      rawData = Object.values(dataByYear);
+    }
+
+    // Tính tổng
+    const tongDoanhThu = rawData.reduce((sum, value) => sum + value, 0);
+
+    return successResponse(res, {
+      period,
+      year: currentYear,
+      month: period === "day" ? currentMonth : undefined,
+      labels,
+      data: rawData.map(val => Math.round(val)),
+      tongDoanhThu: Math.round(tongDoanhThu),
+    });
   } catch (error) {
     next(error);
   }

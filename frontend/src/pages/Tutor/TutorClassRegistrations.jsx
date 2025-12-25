@@ -138,9 +138,14 @@ const TutorClassRegistrations = () => {
                 <div className="reg-header">
                   <div className="reg-student">
                     <h3>{reg.hocVien?.hoTen}</h3>
-                    <p>📧 {reg.hocVien?.taiKhoan?.email}</p>
                     {reg.hocVien?.soDienThoai && (
                       <p>📞 {reg.hocVien.soDienThoai}</p>
+                    )}
+                    {reg.hocVien?.diaChi && (
+                      <p>📍 {reg.hocVien.diaChi}</p>
+                    )}
+                    {reg.hocVien?.namSinh && (
+                      <p>🎂 Năm sinh: {reg.hocVien.namSinh}</p>
                     )}
                   </div>
                   <span className={`badge-lg badge-${reg.trangThai.toLowerCase()}`}>
@@ -150,10 +155,10 @@ const TutorClassRegistrations = () => {
 
                 <div className="reg-content">
                   <p>🕐 Đăng ký lúc: {new Date(reg.ngayDangKy).toLocaleString('vi-VN')}</p>
-                  {reg.ghiChu && (
+                  {reg.yeuCauThem && (
                     <div className="reg-note">
-                      <strong>Ghi chú từ học viên:</strong>
-                      <p>{reg.ghiChu}</p>
+                      <strong>Yêu cầu thêm từ học viên:</strong>
+                      <p>{reg.yeuCauThem}</p>
                     </div>
                   )}
                 </div>

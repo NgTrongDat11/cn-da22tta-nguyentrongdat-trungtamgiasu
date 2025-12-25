@@ -110,7 +110,6 @@ model HopDongGiangDay {
   maHopDong    String    @id @default(dbgenerated("gen_random_uuid()")) @map("mahopdong") @db.Uuid
   maGiaSu      String    @map("magiasu") @db.Uuid
   maLop        String    @map("malop") @db.Uuid
-  luongTheoGio Decimal   @map("luongtheogio") @db.Decimal(12, 2)
   ngayNhanLop  DateTime? @default(now()) @map("ngaynhanlop") @db.Timestamp(6)
   trangThai    String?   @default("DangDay") @map("trangthai") @db.VarChar(20)
   giaSu        GiaSu     @relation(fields: [maGiaSu], references: [maGiaSu], onDelete: Cascade, onUpdate: NoAction)

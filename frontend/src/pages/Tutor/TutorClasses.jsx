@@ -25,7 +25,6 @@ const TutorClasses = () => {
       const classesData = contracts.map(contract => ({
         ...contract.lopHoc,
         maHopDong: contract.maHopDong,
-        luongTheoGio: contract.luongTheoGio,
         trangThaiHopDong: contract.trangThai,
       }));
       setClasses(classesData);
@@ -60,13 +59,14 @@ const TutorClasses = () => {
     <DashboardLayout>
       <div className="page-content">
         <div className="page-header">
-          <div>
+          <div style={{ flex: 1 }}>
             <h1>Lớp Học Của Tôi</h1>
             <p>Quản lý các lớp học bạn đang dạy</p>
           </div>
           <button
             onClick={() => navigate('/tutor/create-class')}
             className="btn btn-primary"
+            style={{ marginLeft: '20px', whiteSpace: 'nowrap' }}
           >
             ➕ Tạo Lớp Mới
           </button>

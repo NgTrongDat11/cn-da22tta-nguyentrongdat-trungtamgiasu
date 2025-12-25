@@ -48,8 +48,8 @@ const TutorDashboard = () => {
             <p className="stat-value">{classes.length}</p>
           </div>
           <div className="stat-card">
-            <h3>Lương Theo Giờ</h3>
-            <p className="stat-value">{formatCurrency(profile?.luongTheoGio)}</p>
+            <h3>Điểm Trung Bình</h3>
+            <p className="stat-value">{profile?.thongKe?.diemTrungBinh || 'N/A'}</p>
           </div>
         </div>
 

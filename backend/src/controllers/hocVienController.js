@@ -247,10 +247,9 @@ export const huyDangKy = async (req, res, next) => {
       return errorResponse(res, "Không thể hủy đăng ký đã được xử lý", 400);
     }
 
-    // Update status to Huy
-    await prisma.dangKy.update({
+    // Delete đăng ký (cho phép đăng ký lại sau này)
+    await prisma.dangKy.delete({
       where: { maDangKy: id },
-      data: { trangThai: "Huy" },
     });
 
     return successResponse(res, null, "Hủy đăng ký thành công");

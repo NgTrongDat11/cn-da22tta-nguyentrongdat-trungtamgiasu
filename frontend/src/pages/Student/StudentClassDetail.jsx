@@ -14,7 +14,7 @@ const StudentClassDetail = () => {
   const [classData, setClassData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [ghiChu, setGhiChu] = useState('');
+  const [yeuCauThem, setYeuCauThem] = useState('');
 
   useEffect(() => {
     loadClassDetail();
@@ -48,7 +48,7 @@ const StudentClassDetail = () => {
     try {
       await apiClient.post('/hoc-vien/dang-ky', {
         maLop: id,
-        ghiChu,
+        yeuCauThem,
       });
       alert('Đăng ký thành công! Vui lòng chờ gia sư duyệt.');
       navigate('/student/registrations');
@@ -134,11 +134,11 @@ const StudentClassDetail = () => {
           <div className="class-detail-footer">
             <form onSubmit={handleRegister} className="register-form">
               <div className="form-group">
-                <label>Ghi chú (không bắt buộc)</label>
+                <label>Yêu cầu thêm (không bắt buộc)</label>
                 <textarea
-                  value={ghiChu}
-                  onChange={(e) => setGhiChu(e.target.value)}
-                  placeholder="Thêm ghi chú cho gia sư..."
+                  value={yeuCauThem}
+                  onChange={(e) => setYeuCauThem(e.target.value)}
+                  placeholder="Thêm yêu cầu hoặc ghi chú cho gia sư..."
                   className="form-textarea"
                   rows="3"
                 />

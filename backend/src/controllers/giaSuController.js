@@ -180,7 +180,8 @@ export const getProfileGiaSu = async (req, res, next) => {
           select: {
             maHopDong: true,
             trangThai: true,
-            luongTheoGio: true,
+            ngayNhanLop: true,
+            maLop: true,
           },
         },
         danhGias: {
@@ -204,14 +205,12 @@ export const getProfileGiaSu = async (req, res, next) => {
           10
         : null;
 
-    const luongTheoGio = hopDongs.length > 0 ? hopDongs[0].luongTheoGio : null;
     const soLopDangDay = hopDongs.filter((hd) => hd.trangThai === "DangDay").length;
 
     return successResponse(res, {
       ...profile,
       email: taiKhoan.email,
       ngayThamGia: taiKhoan.ngayTao,
-      luongTheoGio,
       thongKe: {
         soHopDong: hopDongs.length,
         soLopDangDay,

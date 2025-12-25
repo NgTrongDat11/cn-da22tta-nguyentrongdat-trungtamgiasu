@@ -13,6 +13,8 @@ import {
   capNhatLichHoc,
   duyetDangKy,
   getDanhSachDangKyLop,
+  ketThucLopHoc,
+  huyLopHoc,
 } from "../controllers/lopHocController.js";
 import { auth, optionalAuth, authorize } from "../middleware/auth.js";
 import { validateRequest } from "../middleware/validate.js";
@@ -69,6 +71,24 @@ router.put(
   [body("trangThai").isIn(["DaDuyet", "TuChoi"]).withMessage("Trạng thái không hợp lệ")],
   validateRequest,
   duyetDangKy
+);
+
+// Kết thúc lớp học (chỉ lớp đang dạy)
+router.put(
+  "/:id/ket-thuc",
+  auth,
+  authorize("GiaSu", "Admin"),
+  ketThucLopHoc
+);
+
+// Hủy lớp học (chỉ lớp đang tuyển)
+router.put(
+  "/:id/huy",
+  auth,
+  authorize("GiaSu", "Admin"),
+  [body("lyDoHuy").notEmpty().withMessage("Vui lòng cung cấp lý do hủy lớp")],
+  validateRequest,
+  huyLopHoc
 );
 
 export default router;

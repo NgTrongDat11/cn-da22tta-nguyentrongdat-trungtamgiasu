@@ -421,7 +421,7 @@ const AdminClasses = () => {
                 </div>
 
                 <div className="form-group">
-                  <label>Học Phí (VND/buổi) *</label>
+                  <label>Học Phí *</label>
                   <input
                     type="number"
                     required

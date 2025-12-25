@@ -44,11 +44,7 @@ const TutorProfile = () => {
   const handleUpdate = async (e) => {
     e.preventDefault();
     try {
-      const payload = {
-        ...formData,
-        luongTheoGio: formData.luongTheoGio ? parseFloat(formData.luongTheoGio) : null,
-      };
-      await tutorAPI.updateProfile(payload);
+      await tutorAPI.updateProfile(formData);
       toast.success('Cập nhật hồ sơ thành công');
       setEditing(false);
       loadProfile();

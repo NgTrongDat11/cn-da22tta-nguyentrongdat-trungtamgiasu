@@ -213,7 +213,6 @@ const seed = async () => {
           data: {
             maGiaSu: giaSus[i].maGiaSu,
             maLop: lopHoc.maLop,
-            luongTheoGio: lh.hocPhi / lh.soBuoiDuKien,
           },
         });
       }

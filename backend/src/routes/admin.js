@@ -15,6 +15,7 @@ import {
   ganGiaSuChoLop,
   xoaLopHoc,
   getDanhSachDangKy,
+  getRevenueStats,
 } from "../controllers/adminController.js";
 import { auth, authorize } from "../middleware/auth.js";
 import { validateRequest } from "../middleware/validate.js";
@@ -27,6 +28,7 @@ router.use(authorize("Admin"));
 
 // Dashboard
 router.get("/dashboard", getDashboard);
+router.get("/dashboard/revenue", getRevenueStats);
 
 // Quản lý tài khoản
 router.get("/tai-khoan", getDanhSachTaiKhoan);
@@ -53,7 +55,6 @@ router.post(
   "/lop-hoc/:id/gan-gia-su",
   [
     body("maGiaSu").isUUID().withMessage("Mã gia sư không hợp lệ"),
-    body("luongTheoGio").optional().isFloat({ min: 0 }).withMessage("Lương phải là số dương"),
   ],
   validateRequest,
   ganGiaSuChoLop

@@ -6,6 +6,7 @@
 import prisma from "../config/prisma.js";
 import { successResponse, errorResponse, paginatedResponse } from "../utils/response.js";
 import { parsePagination } from "../utils/pagination.js";
+import { TRANG_THAI_LOP, TRANG_THAI_HOP_DONG } from "../constants/status.js";
 
 /**
  * Lấy danh sách lớp học (public)
@@ -546,6 +547,172 @@ export const getDanhSachDangKyLop = async (req, res, next) => {
     });
 
     return paginatedResponse(res, dangKyList, { page, limit, total });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Kết thúc lớp học
+ * PUT /api/lop-hoc/:id/ket-thuc
+ * Body: { lyDoKetThuc?: string }
+ */
+export const ketThucLopHoc = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { lyDoKetThuc } = req.body;
+    const { role } = req.user;
+
+    // 1. Kiểm tra quyền
+    if (!["GiaSu", "Admin"].includes(role)) {
+      return errorResponse(res, "Bạn không có quyền thực hiện thao tác này", 403);
+    }
+
+    // 2. Tìm lớp học
+    const lopHoc = await prisma.lopHoc.findUnique({
+      where: { maLop: id },
+      include: {
+        hopDongs: {
+          where: { trangThai: TRANG_THAI_HOP_DONG.DANG_DAY }
+        },
+        dangKys: {
+          where: { trangThai: "DaDuyet" }
+        },
+        monHoc: true,
+      },
+    });
+
+    if (!lopHoc) {
+      return errorResponse(res, "Không tìm thấy lớp học", 404);
+    }
+
+    // 3. Kiểm tra trạng thái hiện tại
+    if (lopHoc.trangThai === TRANG_THAI_LOP.KET_THUC) {
+      return errorResponse(res, "Lớp học đã kết thúc trước đó", 400);
+    }
+
+    if (lopHoc.trangThai === TRANG_THAI_LOP.HUY) {
+      return errorResponse(res, "Không thể kết thúc lớp đã bị hủy", 400);
+    }
+
+    if (lopHoc.trangThai === TRANG_THAI_LOP.DANG_TUYEN) {
+      return errorResponse(res, "Lớp chưa bắt đầu, hãy hủy thay vì kết thúc", 400);
+    }
+
+    // 4. Nếu là Gia sư, kiểm tra có phải gia sư của lớp không
+    if (role === "GiaSu") {
+      const giaSu = await prisma.giaSu.findUnique({
+        where: { taiKhoanId: req.user.id },
+      });
+
+      const isOwner = lopHoc.hopDongs.some((hd) => hd.maGiaSu === giaSu?.maGiaSu);
+      if (!isOwner) {
+        return errorResponse(res, "Bạn không phải gia sư của lớp này", 403);
+      }
+    }
+
+    // 5. Thực hiện transaction: Update lớp + hợp đồng
+    const result = await prisma.$transaction(async (tx) => {
+      // Update trạng thái lớp học
+      const updatedLop = await tx.lopHoc.update({
+        where: { maLop: id },
+        data: {
+          trangThai: TRANG_THAI_LOP.KET_THUC,
+          ngayKetThuc: new Date(),
+        },
+        include: {
+          monHoc: true,
+        },
+      });
+
+      // Update tất cả hợp đồng đang active của lớp này
+      await tx.hopDongGiangDay.updateMany({
+        where: {
+          maLop: id,
+          trangThai: TRANG_THAI_HOP_DONG.DANG_DAY,
+        },
+        data: {
+          trangThai: TRANG_THAI_HOP_DONG.DA_KET_THUC,
+        },
+      });
+
+      return updatedLop;
+    });
+
+    return successResponse(res, {
+      lopHoc: result,
+      soHocVien: lopHoc.dangKys.length,
+      lyDoKetThuc: lyDoKetThuc || "Hoàn thành khóa học",
+    }, "Đã kết thúc lớp học thành công");
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Hủy lớp học (Chưa bắt đầu)
+ * PUT /api/lop-hoc/:id/huy
+ * Body: { lyDoHuy: string }
+ */
+export const huyLopHoc = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { lyDoHuy } = req.body;
+    const { role } = req.user;
+
+    // Validate
+    if (!lyDoHuy) {
+      return errorResponse(res, "Vui lòng cung cấp lý do hủy lớp", 400);
+    }
+
+    // Kiểm tra quyền
+    if (!["GiaSu", "Admin"].includes(role)) {
+      return errorResponse(res, "Bạn không có quyền thực hiện thao tác này", 403);
+    }
+
+    const lopHoc = await prisma.lopHoc.findUnique({
+      where: { maLop: id },
+      include: {
+        hopDongs: true,
+        dangKys: {
+          where: { trangThai: "DaDuyet" }
+        }
+      },
+    });
+
+    if (!lopHoc) {
+      return errorResponse(res, "Không tìm thấy lớp học", 404);
+    }
+
+    // Chỉ cho phép hủy lớp đang tuyển
+    if (lopHoc.trangThai !== TRANG_THAI_LOP.DANG_TUYEN) {
+      return errorResponse(res, "Chỉ có thể hủy lớp đang trong giai đoạn tuyển sinh", 400);
+    }
+
+    // Nếu là Gia sư, kiểm tra có phải gia sư của lớp không
+    if (role === "GiaSu") {
+      const giaSu = await prisma.giaSu.findUnique({
+        where: { taiKhoanId: req.user.id },
+      });
+
+      const isOwner = lopHoc.hopDongs.some((hd) => hd.maGiaSu === giaSu?.maGiaSu);
+      if (!isOwner) {
+        return errorResponse(res, "Bạn không phải gia sư của lớp này", 403);
+      }
+    }
+
+    // Update trạng thái
+    const result = await prisma.lopHoc.update({
+      where: { maLop: id },
+      data: {
+        trangThai: TRANG_THAI_LOP.HUY,
+      },
+      include: {
+        monHoc: true,
+      },
+    });
+
+    return successResponse(res, result, `Đã hủy lớp học. Lý do: ${lyDoHuy}`);
   } catch (error) {
     next(error);
   }

@@ -109,7 +109,6 @@ CREATE TABLE hopdonggiangday (
     mahopdong UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     magiasu UUID NOT NULL,
     malop UUID NOT NULL,
-    luongtheogio DECIMAL(12, 2) NOT NULL,
     ngaynhanlop TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     trangthai VARCHAR(20) DEFAULT 'DangDay' CHECK (trangthai IN ('DangDay', 'DaKetThuc', 'TamDung')),
     

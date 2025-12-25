@@ -98,6 +98,73 @@
   gap: 1rem;
 }
 
+/* Chart Section */
+.chart-section {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  margin-top: 2rem;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.chart-header h2 {
+  font-size: 1.5rem;
+  color: #2d3748;
+  margin: 0;
+}
+
+.chart-controls {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.chart-controls select {
+  padding: 0.5rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  background: white;
+  cursor: pointer;
+  transition: border-color 0.3s;
+}
+
+.chart-controls select:hover {
+  border-color: #4CAF50;
+}
+
+.chart-controls select:focus {
+  outline: none;
+  border-color: #4CAF50;
+}
+
+.chart-container {
+  margin-top: 1rem;
+}
+
+.chart-summary {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 1.1rem;
+  color: #2d3748;
+}
+
+.chart-summary strong {
+  color: #4CAF50;
+}
+
 .list-item {
   display: flex;
   justify-content: space-between;
