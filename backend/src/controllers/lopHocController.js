@@ -6,7 +6,118 @@
 import prisma from "../config/prisma.js";
 import { successResponse, errorResponse, paginatedResponse } from "../utils/response.js";
 import { parsePagination } from "../utils/pagination.js";
-import { TRANG_THAI_LOP, TRANG_THAI_HOP_DONG } from "../constants/status.js";
+import { TRANG_THAI_LOP, TRANG_THAI_HOP_DONG, TRANG_THAI_DANG_KY } from "../constants/status.js";
+
+/**
+ * Kết thúc hàng loạt lớp học
+ * PUT /api/lop-hoc/ket-thuc-hang-loat
+ * Body: { maLopList: [1,2,3], lyDoKetThuc: "..." }
+ */
+export const ketThucHangLoat = async (req, res, next) => {
+  try {
+    const { maLopList, lyDoKetThuc } = req.body;
+    const userId = req.user.userId;
+    const userRole = req.user.vaiTro;
+
+    // Validation
+    if (!Array.isArray(maLopList) || maLopList.length === 0) {
+      return errorResponse(res, "Danh sách lớp không hợp lệ", 400);
+    }
+
+    if (!lyDoKetThuc || lyDoKetThuc.trim() === '') {
+      return errorResponse(res, "Vui lòng nhập lý do kết thúc", 400);
+    }
+
+    // Get all classes to validate
+    const lopList = await prisma.lopHoc.findMany({
+      where: {
+        maLop: { in: maLopList },
+      },
+      include: {
+        hopDongs: {
+          where: { trangThai: TRANG_THAI_HOP_DONG.DANG_DAY },
+          select: { maGiaSu: true },
+        },
+      },
+    });
+
+    if (lopList.length !== maLopList.length) {
+      return errorResponse(res, "Một hoặc nhiều lớp không tồn tại", 404);
+    }
+
+    // Validate permissions and status
+    for (const lop of lopList) {
+      if (lop.trangThai !== TRANG_THAI_LOP.DANG_DAY) {
+        return errorResponse(
+          res,
+          `Lớp "${lop.tenLop}" không đang dạy, không thể kết thúc`,
+          400
+        );
+      }
+
+      // Check permission for GiaSu
+      if (userRole === "GiaSu") {
+        const giaSuId = await prisma.giaSu.findUnique({
+          where: { maTaiKhoan: userId },
+          select: { maGiaSu: true },
+        });
+
+        const isTeaching = lop.hopDongs.some(
+          (hd) => hd.maGiaSu === giaSuId?.maGiaSu
+        );
+
+        if (!isTeaching) {
+          return errorResponse(
+            res,
+            `Bạn không có quyền kết thúc lớp "${lop.tenLop}"`,
+            403
+          );
+        }
+      }
+    }
+
+    // Transaction: Update all classes
+    await prisma.$transaction(async (tx) => {
+      const updates = [];
+
+      for (const maLop of maLopList) {
+        // Update LopHoc
+        const lopUpdate = tx.lopHoc.update({
+          where: { maLop },
+          data: {
+            trangThai: TRANG_THAI_LOP.KET_THUC,
+            lyDoKetThuc: lyDoKetThuc.trim(),
+            ngayCapNhat: new Date(),
+          },
+        });
+
+        // Update HopDongGiangDay
+        const hopDongUpdate = tx.hopDongGiangDay.updateMany({
+          where: {
+            maLop,
+            trangThai: TRANG_THAI_HOP_DONG.DANG_DAY,
+          },
+          data: {
+            trangThai: TRANG_THAI_HOP_DONG.DA_KET_THUC,
+            ngayCapNhat: new Date(),
+          },
+        });
+
+        updates.push(lopUpdate, hopDongUpdate);
+      }
+
+      return Promise.all(updates);
+    });
+
+    return successResponse(
+      res,
+      { count: maLopList.length },
+      `Đã kết thúc ${maLopList.length} lớp học thành công`
+    );
+  } catch (error) {
+    next(error);
+  }
+};
 
 /**
  * Lấy danh sách lớp học (public)
@@ -70,7 +181,13 @@ export const getDanhSachLopHoc = async (req, res, next) => {
             },
           },
         },
-        lichHocs: true,
+        lichHocs: {
+          orderBy: [
+            { ngayHoc: "asc" },
+            { thu: "asc" },
+            { gioBatDau: "asc" }
+          ]
+        },
         _count: {
           select: {
             dangKys: {
@@ -127,7 +244,13 @@ export const getChiTietLopHoc = async (req, res, next) => {
             },
           },
         },
-        lichHocs: true,
+        lichHocs: {
+          orderBy: [
+            { ngayHoc: "asc" },
+            { thu: "asc" },
+            { gioBatDau: "asc" }
+          ]
+        },
         dangKys: {
           where: { trangThai: "DaDuyet" },
           select: {
@@ -174,6 +297,8 @@ export const taoLopHoc = async (req, res, next) => {
       moTa,
       hinhThuc,
       soBuoiDuKien,
+      ngayBatDau,
+      ngayKetThuc,
       lichHocs,
     } = req.body;
 
@@ -186,6 +311,43 @@ export const taoLopHoc = async (req, res, next) => {
       return errorResponse(res, "Môn học không tồn tại", 404);
     }
 
+    // Generate actual schedule sessions from templates
+    let actualSessions = [];
+    if (lichHocs?.length > 0 && ngayBatDau && ngayKetThuc) {
+      const startDate = new Date(ngayBatDau);
+      const endDate = new Date(ngayKetThuc);
+      let currentDate = new Date(startDate);
+      
+      while (currentDate <= endDate) {
+        const dayOfWeek = currentDate.getDay(); // 0=Sunday, 1=Monday, ..., 6=Saturday
+        const thu = dayOfWeek === 0 ? 8 : dayOfWeek + 1; // Convert to thu format (2-8)
+        
+        // Find matching template for this day of week
+        const template = lichHocs.find(lich => parseInt(lich.thu) === thu);
+        if (template) {
+          actualSessions.push({
+            thu: thu,
+            ngayHoc: new Date(currentDate),
+            gioBatDau: new Date(`1970-01-01T${template.gioBatDau}`),
+            gioKetThuc: new Date(`1970-01-01T${template.gioKetThuc}`),
+            phongHoc: template.phongHoc || null,
+            linkHocOnline: template.linkHocOnline || null,
+          });
+        }
+        
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+    } else if (lichHocs?.length > 0) {
+      // Fallback to template mode if no dates provided
+      actualSessions = lichHocs.map((lich) => ({
+        thu: parseInt(lich.thu),
+        gioBatDau: new Date(`1970-01-01T${lich.gioBatDau}`),
+        gioKetThuc: new Date(`1970-01-01T${lich.gioKetThuc}`),
+        phongHoc: lich.phongHoc || null,
+        linkHocOnline: lich.linkHocOnline || null,
+      }));
+    }
+
     // Create lớp học
     const lopHoc = await prisma.lopHoc.create({
       data: {
@@ -195,22 +357,24 @@ export const taoLopHoc = async (req, res, next) => {
         moTa,
         hinhThuc: hinhThuc || "Offline",
         soBuoiDuKien,
-        // Create lịch học if provided
-        ...(lichHocs?.length > 0 && {
+        ngayBatDau: ngayBatDau ? new Date(ngayBatDau) : null,
+        ngayKetThuc: ngayKetThuc ? new Date(ngayKetThuc) : null,
+        // Create actual schedule sessions
+        ...(actualSessions.length > 0 && {
           lichHocs: {
-            create: lichHocs.map((lich) => ({
-              thu: lich.thu,
-              gioBatDau: new Date(`1970-01-01T${lich.gioBatDau}`),
-              gioKetThuc: new Date(`1970-01-01T${lich.gioKetThuc}`),
-              phongHoc: lich.phongHoc,
-              linkHocOnline: lich.linkHocOnline,
-            })),
+            create: actualSessions,
           },
         }),
       },
       include: {
         monHoc: true,
-        lichHocs: true,
+        lichHocs: {
+          orderBy: [
+            { ngayHoc: "asc" },
+            { thu: "asc" },
+            { gioBatDau: "asc" }
+          ]
+        },
       },
     });
 
@@ -225,7 +389,6 @@ export const taoLopHoc = async (req, res, next) => {
           data: {
             maGiaSu: giaSu.maGiaSu,
             maLop: lopHoc.maLop,
-            luongTheoGio: hocPhi / (soBuoiDuKien || 1), // Estimate hourly rate
           },
         });
       }
@@ -299,7 +462,13 @@ export const capNhatLopHoc = async (req, res, next) => {
       },
       include: {
         monHoc: true,
-        lichHocs: true,
+        lichHocs: {
+          orderBy: [
+            { ngayHoc: "asc" },
+            { thu: "asc" },
+            { gioBatDau: "asc" }
+          ]
+        },
       },
     });
 
@@ -315,7 +484,7 @@ export const capNhatLopHoc = async (req, res, next) => {
         await prisma.lichHoc.createMany({
           data: lichHocs.map((lich) => ({
             maLop: id,
-            thu: lich.thu,
+            thu: parseInt(lich.thu),
             gioBatDau: new Date(`1970-01-01T${lich.gioBatDau}`),
             gioKetThuc: new Date(`1970-01-01T${lich.gioKetThuc}`),
             phongHoc: lich.phongHoc,
@@ -330,7 +499,13 @@ export const capNhatLopHoc = async (req, res, next) => {
       where: { maLop: id },
       include: {
         monHoc: true,
-        lichHocs: true,
+        lichHocs: {
+          orderBy: [
+            { ngayHoc: "asc" },
+            { thu: "asc" },
+            { gioBatDau: "asc" }
+          ]
+        },
       },
     });
 
@@ -363,17 +538,48 @@ export const capNhatLichHoc = async (req, res, next) => {
       where: { maLop: id },
     });
 
+    // Generate actual schedule sessions from templates if dates available
+    let actualSessions = [];
+    if (lichHocs?.length > 0 && lopHoc.ngayBatDau && lopHoc.ngayKetThuc) {
+      const startDate = new Date(lopHoc.ngayBatDau);
+      const endDate = new Date(lopHoc.ngayKetThuc);
+      let currentDate = new Date(startDate);
+      
+      while (currentDate <= endDate) {
+        const dayOfWeek = currentDate.getDay();
+        const thu = dayOfWeek === 0 ? 8 : dayOfWeek + 1;
+        
+        const template = lichHocs.find(lich => parseInt(lich.thu) === thu);
+        if (template) {
+          actualSessions.push({
+            maLop: id,
+            thu: thu,
+            ngayHoc: new Date(currentDate),
+            gioBatDau: new Date(`1970-01-01T${template.gioBatDau}`),
+            gioKetThuc: new Date(`1970-01-01T${template.gioKetThuc}`),
+            phongHoc: template.phongHoc || null,
+            linkHocOnline: template.linkHocOnline || null,
+          });
+        }
+        
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+    } else if (lichHocs?.length > 0) {
+      // Fallback to template mode
+      actualSessions = lichHocs.map((lich) => ({
+        maLop: id,
+        thu: parseInt(lich.thu),
+        gioBatDau: new Date(`1970-01-01T${lich.gioBatDau}`),
+        gioKetThuc: new Date(`1970-01-01T${lich.gioKetThuc}`),
+        phongHoc: lich.phongHoc || null,
+        linkHocOnline: lich.linkHocOnline || null,
+      }));
+    }
+
     // Create new schedules
-    if (lichHocs?.length > 0) {
+    if (actualSessions.length > 0) {
       await prisma.lichHoc.createMany({
-        data: lichHocs.map((lich) => ({
-          maLop: id,
-          thu: lich.thu,
-          gioBatDau: new Date(`1970-01-01T${lich.gioBatDau}`),
-          gioKetThuc: new Date(`1970-01-01T${lich.gioKetThuc}`),
-          phongHoc: lich.phongHoc,
-          linkHocOnline: lich.linkHocOnline,
-        })),
+        data: actualSessions,
       });
     }
 
@@ -381,7 +587,13 @@ export const capNhatLichHoc = async (req, res, next) => {
     const updatedLop = await prisma.lopHoc.findUnique({
       where: { maLop: id },
       include: {
-        lichHocs: true,
+        lichHocs: {
+          orderBy: [
+            { ngayHoc: "asc" },
+            { thu: "asc" },
+            { gioBatDau: "asc" }
+          ]
+        },
       },
     });
 

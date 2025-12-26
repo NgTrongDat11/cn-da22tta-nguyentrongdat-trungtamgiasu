@@ -64,6 +64,9 @@ const AdminDashboard = () => {
       <div className="dashboard-content">
         <div className="page-header">
           <h1>Tổng Quan Hệ Thống ⚙️</h1>
+          <p style={{color: '#6c757d', marginTop: '8px'}}>
+            Giám sát và quản lý tổng thể hệ thống
+          </p>
         </div>
 
         <div className="stats-grid">
@@ -80,7 +83,7 @@ const AdminDashboard = () => {
             <p className="stat-value">{stats?.tongHocVien || 0}</p>
           </div>
           <div className="stat-card">
-            <h3>Lớp Học</h3>
+            <h3>Tổng Lớp Học</h3>
             <p className="stat-value">{stats?.tongLopHoc || 0}</p>
           </div>
           <div className="stat-card">
@@ -95,9 +98,20 @@ const AdminDashboard = () => {
             <h3>Đăng Ký Chờ Duyệt</h3>
             <p className="stat-value">{stats?.dangKyChoDuyet || 0}</p>
           </div>
+          <div className="stat-card">
+            <h3>✅ Lớp Đã Kết Thúc</h3>
+            <p className="stat-value">{stats?.lopDaKetThuc || 0}</p>
+          </div>
+          <div className="stat-card">
+            <h3>❌ Lớp Đã Hủy</h3>
+            <p className="stat-value">{stats?.lopDaHuy || 0}</p>
+          </div>
           <div className="stat-card highlight">
             <h3>💰 Tổng Doanh Thu</h3>
             <p className="stat-value">{formatCurrency(stats?.tongDoanhThu)}</p>
+            <small style={{color: 'rgba(255,255,255,0.9)'}}>
+              (Chỉ tính lớp đang dạy + đã kết thúc)
+            </small>
           </div>
         </div>
 

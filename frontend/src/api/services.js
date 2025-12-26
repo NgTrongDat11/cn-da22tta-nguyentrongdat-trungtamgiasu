@@ -74,8 +74,33 @@ export const adminAPI = {
     return data.data;
   },
 
+  removeTutor: async (classId) => {
+    const { data } = await apiClient.post(`/admin/lop-hoc/${classId}/go-gia-su`);
+    return data.data;
+  },
+
   deleteClass: async (classId) => {
     const { data } = await apiClient.delete(`/admin/lop-hoc/${classId}`);
+    return data.data;
+  },
+
+  finishClass: async (classId, payload = {}) => {
+    const { data } = await apiClient.put(`/lop-hoc/${classId}/ket-thuc`, payload);
+    return data.data;
+  },
+
+  cancelClass: async (classId, lyDoHuy) => {
+    const { data } = await apiClient.put(`/lop-hoc/${classId}/huy`, { lyDoHuy });
+    return data.data;
+  },
+
+  getExpiringSoon: async (days = 7) => {
+    const { data } = await apiClient.get(`/admin/lop-hoc/sap-het-han?days=${days}`);
+    return data.data;
+  },
+
+  bulkFinishClasses: async (maLopList, lyDoKetThuc) => {
+    const { data } = await apiClient.put('/lop-hoc/ket-thuc-hang-loat', { maLopList, lyDoKetThuc });
     return data.data;
   },
 
@@ -109,6 +134,16 @@ export const tutorAPI = {
 
   getMyRegistrations: async (params) => {
     const { data } = await apiClient.get('/gia-su/me/dang-ky', { params });
+    return data.data;
+  },
+
+  finishClass: async (classId, payload = {}) => {
+    const { data } = await apiClient.put(`/lop-hoc/${classId}/ket-thuc`, payload);
+    return data.data;
+  },
+
+  cancelClass: async (classId, lyDoHuy) => {
+    const { data } = await apiClient.put(`/lop-hoc/${classId}/huy`, { lyDoHuy });
     return data.data;
   },
 };

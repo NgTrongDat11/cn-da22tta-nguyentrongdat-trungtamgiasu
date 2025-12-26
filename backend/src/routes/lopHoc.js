@@ -15,6 +15,7 @@ import {
   getDanhSachDangKyLop,
   ketThucLopHoc,
   huyLopHoc,
+  ketThucHangLoat,
 } from "../controllers/lopHocController.js";
 import { auth, optionalAuth, authorize } from "../middleware/auth.js";
 import { validateRequest } from "../middleware/validate.js";
@@ -79,6 +80,19 @@ router.put(
   auth,
   authorize("GiaSu", "Admin"),
   ketThucLopHoc
+);
+
+// Kết thúc hàng loạt
+router.put(
+  "/ket-thuc-hang-loat",
+  auth,
+  authorize("GiaSu", "Admin"),
+  [
+    body("maLopList").isArray({ min: 1 }).withMessage("Danh sách lớp không hợp lệ"),
+    body("lyDoKetThuc").notEmpty().withMessage("Vui lòng cung cấp lý do kết thúc"),
+  ],
+  validateRequest,
+  ketThucHangLoat
 );
 
 // Hủy lớp học (chỉ lớp đang tuyển)

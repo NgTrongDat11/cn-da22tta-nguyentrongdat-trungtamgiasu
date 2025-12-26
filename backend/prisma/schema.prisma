@@ -123,6 +123,7 @@ model LichHoc {
   maLich        String   @id @default(dbgenerated("gen_random_uuid()")) @map("malich") @db.Uuid
   maLop         String   @map("malop") @db.Uuid
   thu           Int?     @map("thu")
+  ngayHoc       DateTime? @map("ngayhoc") @db.Date
   gioBatDau     DateTime @map("giobatdau") @db.Time(6)
   gioKetThuc    DateTime @map("gioketthuc") @db.Time(6)
   phongHoc      String?  @map("phonghoc") @db.VarChar(50)

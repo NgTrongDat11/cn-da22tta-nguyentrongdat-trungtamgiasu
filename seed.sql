@@ -220,11 +220,10 @@ FROM monhoc WHERE tenmon = 'Vật lý';
 -- ========================================================
 
 -- Nguyễn Văn A dạy Toán 10
-INSERT INTO hopdonggiangday (magiasu, malop, luongtheogio, trangthai)
+INSERT INTO hopdonggiangday (magiasu, malop, trangthai)
 SELECT 
     gs.magiasu,
     lh.malop,
-    200000,
     'DangDay'
 FROM giasu gs
 CROSS JOIN LopHoc lh
@@ -232,11 +231,10 @@ WHERE gs.hoten = 'Nguyễn Văn A'
 AND lh.tenlop = 'Toán 10 - Nền tảng';
 
 -- Nguyễn Văn A dạy Toán 12
-INSERT INTO hopdonggiangday (magiasu, malop, luongtheogio, trangthai)
+INSERT INTO hopdonggiangday (magiasu, malop, trangthai)
 SELECT 
     gs.magiasu,
     lh.malop,
-    250000,
     'DangDay'
 FROM giasu gs
 CROSS JOIN LopHoc lh
@@ -244,11 +242,10 @@ WHERE gs.hoten = 'Nguyễn Văn A'
 AND lh.tenlop = 'Toán 12 - Luyện thi THPT QG';
 
 -- Trần Thị B dạy Vật lý 11
-INSERT INTO hopdonggiangday (magiasu, malop, luongtheogio, trangthai)
+INSERT INTO hopdonggiangday (magiasu, malop, trangthai)
 SELECT 
     gs.magiasu,
     lh.malop,
-    220000,
     'DangDay'
 FROM giasu gs
 CROSS JOIN LopHoc lh

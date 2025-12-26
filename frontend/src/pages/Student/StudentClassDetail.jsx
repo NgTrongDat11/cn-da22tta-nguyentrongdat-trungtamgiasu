@@ -108,7 +108,7 @@ const StudentClassDetail = () => {
             </div>
 
             <div className="detail-section">
-              <h3>Thông tin gia sư</h3>
+              <h3>👨‍🏫 Thông tin gia sư</h3>
               <div className="tutor-info">
                 {classData.giaSu?.hinhAnh && (
                   <img src={classData.giaSu.hinhAnh} alt="Avatar" className="tutor-avatar" />
@@ -118,7 +118,7 @@ const StudentClassDetail = () => {
                   {classData.giaSu?.chuyenMon && <p>🎯 {classData.giaSu.chuyenMon}</p>}
                   {classData.giaSu?.trinhDo && <p>🎓 {classData.giaSu.trinhDo}</p>}
                   {classData.giaSu?.kinhNghiem && <p>💼 {classData.giaSu.kinhNghiem}</p>}
-                  {classData.giaSu?.gioiThieu && <p className="tutor-intro">{classData.giaSu.gioiThieu}</p>}
+                  {classData.giaSu?.gioiThieu && <p className="tutor-intro">📄 {classData.giaSu.gioiThieu}</p>}
                 </div>
               </div>
             </div>

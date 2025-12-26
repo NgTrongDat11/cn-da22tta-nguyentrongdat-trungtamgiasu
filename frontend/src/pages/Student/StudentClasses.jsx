@@ -82,10 +82,8 @@ const StudentClasses = () => {
               onChange={(e) => setFilters({ ...filters, trangThai: e.target.value })}
               className="form-select"
             >
-              <option value="">Tất cả trạng thái</option>
               <option value="DangTuyen">Đang Tuyển</option>
               <option value="DangDay">Đang Dạy</option>
-              <option value="KetThuc">Kết Thúc</option>
             </select>
             <button type="submit" className="btn btn-primary">Tìm kiếm</button>
           </form>

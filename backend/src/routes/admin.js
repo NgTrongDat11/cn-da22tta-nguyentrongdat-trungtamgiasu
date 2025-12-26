@@ -13,9 +13,11 @@ import {
   xoaTaiKhoan,
   getDanhSachLopHoc,
   ganGiaSuChoLop,
+  goGiaSu,
   xoaLopHoc,
   getDanhSachDangKy,
   getRevenueStats,
+  getLopSapHetHan,
 } from "../controllers/adminController.js";
 import { auth, authorize } from "../middleware/auth.js";
 import { validateRequest } from "../middleware/validate.js";
@@ -29,6 +31,9 @@ router.use(authorize("Admin"));
 // Dashboard
 router.get("/dashboard", getDashboard);
 router.get("/dashboard/revenue", getRevenueStats);
+
+// Lớp học admin
+router.get("/lop-hoc/sap-het-han", getLopSapHetHan);
 
 // Quản lý tài khoản
 router.get("/tai-khoan", getDanhSachTaiKhoan);
@@ -59,6 +64,7 @@ router.post(
   validateRequest,
   ganGiaSuChoLop
 );
+router.post("/lop-hoc/:id/go-gia-su", goGiaSu);
 router.delete("/lop-hoc/:id", xoaLopHoc);
 
 // Quản lý đăng ký

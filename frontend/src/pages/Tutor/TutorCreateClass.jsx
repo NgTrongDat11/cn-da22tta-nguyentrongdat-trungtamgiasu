@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import DashboardLayout from '../../components/Layout/DashboardLayout';
 import { subjectAPI, classAPI } from '../../api/services';
+import { getNextWeekdayDate, formatShortDate } from '../../utils/dateUtils';
 import './Tutor.css';
 
 const TutorCreateClass = () => {
@@ -19,6 +20,10 @@ const TutorCreateClass = () => {
     moTa: '',
     hocPhi: '',
     hinhThuc: '',
+    ngayBatDau: '',
+    ngayKetThuc: '',
+    soBuoiDuKien: '',
+    lichHocs: [], // Thêm lịch học
   });
 
   useEffect(() => {
@@ -45,6 +50,13 @@ const TutorCreateClass = () => {
       const payload = {
         ...formData,
         hocPhi: parseFloat(formData.hocPhi),
+        soBuoiDuKien: formData.soBuoiDuKien ? parseInt(formData.soBuoiDuKien) : null,
+        ngayBatDau: formData.ngayBatDau || null,
+        ngayKetThuc: formData.ngayKetThuc || null,
+        // Chỉ gửi lichHocs hợp lệ (đầy đủ thu, gioBatDau, gioKetThuc)
+        lichHocs: formData.lichHocs.filter(lich => 
+          lich.thu && lich.gioBatDau && lich.gioKetThuc
+        ),
       };
       await classAPI.createClass(payload);
       toast.success('Tạo lớp học thành công!');
@@ -139,6 +151,187 @@ const TutorCreateClass = () => {
                   <option value="Online">Online</option>
                   <option value="Offline">Offline</option>
                 </select>
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label>Ngày bắt đầu</label>
+                <input
+                  type="date"
+                  value={formData.ngayBatDau}
+                  onChange={(e) => setFormData({ ...formData, ngayBatDau: e.target.value })}
+                  className="form-input"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Ngày kết thúc</label>
+                <input
+                  type="date"
+                  value={formData.ngayKetThuc}
+                  onChange={(e) => setFormData({ ...formData, ngayKetThuc: e.target.value })}
+                  className="form-input"
+                  min={formData.ngayBatDau || ''}
+                />
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label>Số buổi dự kiến</label>
+              <input
+                type="number"
+                value={formData.soBuoiDuKien}
+                onChange={(e) => setFormData({ ...formData, soBuoiDuKien: e.target.value })}
+                placeholder="VD: 20 buổi"
+                min="1"
+                className="form-input"
+              />
+            </div>
+
+            {/* Lịch Học Section */}
+            <div className="form-group">
+              <label>Lịch Học Hàng Tuần 📅</label>
+              <div style={{backgroundColor: '#e3f2fd', padding: '12px', borderRadius: '6px', marginBottom: '15px', border: '1px solid #90caf9'}}>
+                <p style={{fontSize: '0.9em', color: '#1976d2', margin: 0, lineHeight: '1.5'}}>
+                  ℹ️ <strong>Lưu ý:</strong> Lịch học sẽ tự động lặp lại <strong>hàng tuần</strong> trong khoảng thời gian từ ngày bắt đầu đến ngày kết thúc. 
+                  Ví dụ: Nếu chọn "Thứ 2, 8h-10h", lớp sẽ học vào <strong>mọi Thứ 2</strong> trong suốt khóa học.
+                </p>
+              </div>
+              <div style={{ marginBottom: '10px' }}>
+                {formData.lichHocs.map((lich, index) => (
+                  <div key={index} style={{ 
+                    border: '1px solid #ddd', 
+                    padding: '15px', 
+                    marginBottom: '10px', 
+                    borderRadius: '8px',
+                    backgroundColor: '#f9f9f9'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                      <div>
+                        <strong>🔄 Lịch học hàng tuần #{index + 1}</strong>
+                        <p style={{fontSize: '11px', color: '#666', margin: '3px 0 0 0'}}>Lặp lại mỗi tuần trong suốt khóa học</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newLichHocs = formData.lichHocs.filter((_, i) => i !== index);
+                          setFormData({...formData, lichHocs: newLichHocs});
+                        }}
+                        className="btn btn-sm"
+                        style={{ padding: '5px 10px', fontSize: '12px', backgroundColor: '#dc3545', color: 'white' }}
+                      >
+                        Xóa
+                      </button>
+                    </div>
+                    
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                      <div>
+                        <label style={{ fontSize: '13px', display: 'block', marginBottom: '5px' }}>
+                          Thứ (hàng tuần) *
+                        </label>
+                        <select
+                          value={lich.thu}
+                          onChange={(e) => {
+                            const newLichHocs = [...formData.lichHocs];
+                            newLichHocs[index].thu = e.target.value;
+                            setFormData({...formData, lichHocs: newLichHocs});
+                          }}
+                          className="form-select"
+                        >
+                          <option value="">-- Chọn thứ --</option>
+                          <option value="2">Thứ 2 (hàng tuần)</option>
+                          <option value="3">Thứ 3 (hàng tuần)</option>
+                          <option value="4">Thứ 4 (hàng tuần)</option>
+                          <option value="5">Thứ 5 (hàng tuần)</option>
+                          <option value="6">Thứ 6 (hàng tuần)</option>
+                          <option value="7">Thứ 7 (hàng tuần)</option>
+                          <option value="8">Chủ nhật (hàng tuần)</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label style={{ fontSize: '13px', display: 'block', marginBottom: '5px' }}>Giờ Bắt Đầu *</label>
+                        <input
+                          type="time"
+                          value={lich.gioBatDau}
+                          onChange={(e) => {
+                            const newLichHocs = [...formData.lichHocs];
+                            newLichHocs[index].gioBatDau = e.target.value;
+                            setFormData({...formData, lichHocs: newLichHocs});
+                          }}
+                          className="form-input"
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ fontSize: '13px', display: 'block', marginBottom: '5px' }}>Giờ Kết Thúc *</label>
+                        <input
+                          type="time"
+                          value={lich.gioKetThuc}
+                          onChange={(e) => {
+                            const newLichHocs = [...formData.lichHocs];
+                            newLichHocs[index].gioKetThuc = e.target.value;
+                            setFormData({...formData, lichHocs: newLichHocs});
+                          }}
+                          className="form-input"
+                        />
+                      </div>
+
+                      {formData.hinhThuc === 'Offline' ? (
+                        <div>
+                          <label style={{ fontSize: '13px', display: 'block', marginBottom: '5px' }}>Phòng Học</label>
+                          <input
+                            type="text"
+                            value={lich.phongHoc || ''}
+                            onChange={(e) => {
+                              const newLichHocs = [...formData.lichHocs];
+                              newLichHocs[index].phongHoc = e.target.value;
+                              setFormData({...formData, lichHocs: newLichHocs});
+                            }}
+                            className="form-input"
+                            placeholder="VD: Phòng 101, Tòa A"
+                          />
+                        </div>
+                      ) : formData.hinhThuc === 'Online' ? (
+                        <div>
+                          <label style={{ fontSize: '13px', display: 'block', marginBottom: '5px' }}>Link Học Online</label>
+                          <input
+                            type="url"
+                            value={lich.linkHocOnline || ''}
+                            onChange={(e) => {
+                              const newLichHocs = [...formData.lichHocs];
+                              newLichHocs[index].linkHocOnline = e.target.value;
+                              setFormData({...formData, lichHocs: newLichHocs});
+                            }}
+                            className="form-input"
+                            placeholder="https://meet.google.com/..."
+                          />
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                ))}
+                
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFormData({
+                      ...formData,
+                      lichHocs: [...formData.lichHocs, {
+                        thu: '',
+                        gioBatDau: '',
+                        gioKetThuc: '',
+                        phongHoc: '',
+                        linkHocOnline: ''
+                      }]
+                    });
+                  }}
+                  className="btn btn-outline"
+                  style={{ width: '100%' }}
+                >
+                  + Thêm Lịch Học Hàng Tuần
+                </button>
               </div>
             </div>
 

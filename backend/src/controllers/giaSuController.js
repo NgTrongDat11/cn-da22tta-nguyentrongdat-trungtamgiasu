@@ -343,7 +343,13 @@ export const getDanhSachLopHoc = async (req, res, next) => {
                 },
               },
             },
-            lichHocs: true,
+            lichHocs: {
+              orderBy: [
+                { ngayHoc: "asc" },
+                { thu: "asc" },
+                { gioBatDau: "asc" }
+              ]
+            },
           },
         },
       },

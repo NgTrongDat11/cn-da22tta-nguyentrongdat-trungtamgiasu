@@ -71,6 +71,77 @@ export const getDashboard = async (req, res, next) => {
 };
 
 /**
+ * Lấy danh sách lớp sắp hết hạn
+ * GET /api/admin/lop-hoc/sap-het-han?days=7
+ */
+export const getLopSapHetHan = async (req, res, next) => {
+  try {
+    const days = parseInt(req.query.days) || 7;
+    const today = new Date();
+    const futureDate = new Date();
+    futureDate.setDate(today.getDate() + days);
+
+    const lopList = await prisma.lopHoc.findMany({
+      where: {
+        trangThai: TRANG_THAI_LOP.DANG_DAY,
+        ngayKetThuc: {
+          gte: today,
+          lte: futureDate,
+        },
+      },
+      include: {
+        monHoc: {
+          select: {
+            tenMon: true,
+          },
+        },
+        hopDongs: {
+          where: { trangThai: TRANG_THAI_HOP_DONG.DANG_DAY },
+          include: {
+            giaSu: {
+              select: {
+                hoTen: true,
+              },
+            },
+          },
+        },
+        _count: {
+          select: {
+            dangKys: {
+              where: { trangThai: TRANG_THAI_DANG_KY.DA_DUYET },
+            },
+          },
+        },
+      },
+      orderBy: {
+        ngayKetThuc: 'asc',
+      },
+    });
+
+    // Tính số ngày còn lại cho mỗi lớp
+    const formattedList = lopList.map((lop) => {
+      const daysRemaining = Math.ceil(
+        (new Date(lop.ngayKetThuc) - today) / (1000 * 60 * 60 * 24)
+      );
+      return {
+        maLop: lop.maLop,
+        tenLop: lop.tenLop,
+        tenMon: lop.monHoc.tenMon,
+        ngayKetThuc: lop.ngayKetThuc,
+        daysRemaining,
+        giaSu: lop.hopDongs[0]?.giaSu?.hoTen || 'Chưa có',
+        soHocVien: lop._count.dangKys,
+        hocPhi: lop.hocPhi,
+      };
+    });
+
+    return successResponse(res, formattedList);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * Quản lý tài khoản - Danh sách
  * GET /api/admin/tai-khoan
  */
@@ -423,7 +494,76 @@ export const ganGiaSuChoLop = async (req, res, next) => {
 };
 
 /**
- * Xóa lớp học
+ * Gỡ gia sư khỏi lớp học (cập nhật hợp đồng từ DangDay → TamDung)
+ * POST /api/admin/lop-hoc/:id/go-gia-su
+ */
+export const goGiaSu = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    // Check lớp học exists
+    const lopHoc = await prisma.lopHoc.findUnique({
+      where: { maLop: id },
+      include: {
+        hopDongs: {
+          where: { trangThai: "DangDay" },
+          include: {
+            giaSu: {
+              select: {
+                hoTen: true,
+              },
+            },
+          },
+        },
+        dangKys: {
+          where: { trangThai: "DaDuyet" },
+        },
+      },
+    });
+
+    if (!lopHoc) {
+      return errorResponse(res, "Không tìm thấy lớp học", 404);
+    }
+
+    // Check có hợp đồng đang dạy không
+    if (!lopHoc.hopDongs || lopHoc.hopDongs.length === 0) {
+      return errorResponse(res, "Lớp học chưa có gia sư để gỡ", 400);
+    }
+
+    // Không cho gỡ nếu đang có học viên đang học
+    if (lopHoc.dangKys && lopHoc.dangKys.length > 0) {
+      return errorResponse(
+        res,
+        "Không thể gỡ gia sư khi lớp đang có học viên. Vui lòng kết thúc hoặc hủy lớp học trước.",
+        400
+      );
+    }
+
+    const tenGiaSu = lopHoc.hopDongs[0].giaSu.hoTen;
+
+    // Cập nhật hợp đồng sang TamDung (giữ lớp ở trạng thái hiện tại - DangTuyen)
+    await prisma.hopDongGiangDay.updateMany({
+      where: {
+        maLop: id,
+        trangThai: "DangDay",
+      },
+      data: {
+        trangThai: "TamDung",
+      },
+    });
+
+    return successResponse(
+      res,
+      null,
+      `Đã gỡ gia sư "${tenGiaSu}" khỏi lớp học thành công`
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Xóa lớp học (chỉ xóa được lớp chưa có học viên hoặc hợp đồng đang dạy)
  * DELETE /api/admin/lop-hoc/:id
  */
 export const xoaLopHoc = async (req, res, next) => {
@@ -465,7 +605,7 @@ export const xoaLopHoc = async (req, res, next) => {
     if (hasActiveRegistrations > 0 || hasActiveContracts > 0) {
       return errorResponse(
         res,
-        "Không thể xóa lớp học đang có học viên hoặc đang dạy. Vui lòng kết thúc lớp học trước.",
+        "Không thể xóa lớp học đang có học viên hoặc gia sư. Vui lòng gỡ gia sư hoặc kết thúc lớp học trước.",
         400
       );
     }

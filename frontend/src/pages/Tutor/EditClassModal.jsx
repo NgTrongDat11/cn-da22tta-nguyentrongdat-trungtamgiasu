@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { classAPI, subjectAPI } from '../../api/services';
 import apiClient from '../../api/client';
+import { getNextWeekdayDate, formatShortDate } from '../../utils/dateUtils';
 
 const EditClassModal = ({ classId, onClose, onSuccess }) => {
   const [loading, setLoading] = useState(true);
@@ -259,11 +260,19 @@ const EditClassModal = ({ classId, onClose, onSuccess }) => {
           </form>
         ) : (
           <form onSubmit={handleUpdateSchedule} className="modal-body">
+            <div style={{backgroundColor: '#e3f2fd', padding: '12px', borderRadius: '6px', marginBottom: '15px', border: '1px solid #90caf9'}}>
+              <p style={{fontSize: '0.9em', color: '#1976d2', margin: 0, lineHeight: '1.5'}}>
+                ℹ️ <strong>Lưu ý:</strong> Lịch học sẽ <strong>lặp lại hàng tuần</strong>. Ví dụ: "Thứ 2, 8h-10h" = Học vào mọi Thứ 2.
+              </p>
+            </div>
             <div className="schedules-list">
               {schedules.map((sch, index) => (
                 <div key={index} className="schedule-edit-item">
                   <div className="schedule-edit-header">
-                    <h4>Buổi học #{index + 1}</h4>
+                    <div>
+                      <h4>🔄 Lịch học hàng tuần #{index + 1}</h4>
+                      <p style={{fontSize: '11px', color: '#666', margin: '3px 0 0 0'}}>Lặp lại mỗi tuần</p>
+                    </div>
                     <button
                       type="button"
                       onClick={() => removeSchedule(index)}
@@ -275,20 +284,20 @@ const EditClassModal = ({ classId, onClose, onSuccess }) => {
 
                   <div className="form-row">
                     <div className="form-group">
-                      <label>Thứ *</label>
+                      <label>Thứ (hàng tuần) *</label>
                       <select
                         value={sch.thu}
                         onChange={(e) => updateSchedule(index, 'thu', e.target.value)}
                         required
                         className="form-select"
                       >
-                        <option value="2">Thứ Hai</option>
-                        <option value="3">Thứ Ba</option>
-                        <option value="4">Thứ Tư</option>
-                        <option value="5">Thứ Năm</option>
-                        <option value="6">Thứ Sáu</option>
-                        <option value="7">Thứ Bảy</option>
-                        <option value="8">Chủ Nhật</option>
+                        <option value="2">Thứ Hai (hàng tuần)</option>
+                        <option value="3">Thứ Ba (hàng tuần)</option>
+                        <option value="4">Thứ Tư (hàng tuần)</option>
+                        <option value="5">Thứ Năm (hàng tuần)</option>
+                        <option value="6">Thứ Sáu (hàng tuần)</option>
+                        <option value="7">Thứ Bảy (hàng tuần)</option>
+                        <option value="8">Chủ Nhật (hàng tuần)</option>
                       </select>
                     </div>
 
@@ -348,7 +357,7 @@ const EditClassModal = ({ classId, onClose, onSuccess }) => {
                 onClick={addSchedule}
                 className="btn btn-outline btn-block"
               >
-                ➕ Thêm Buổi Học
+                ➕ Thêm Lịch Học Hàng Tuần
               </button>
             </div>
 

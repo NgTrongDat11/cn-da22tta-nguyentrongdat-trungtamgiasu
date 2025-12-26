@@ -22,11 +22,14 @@ const TutorClasses = () => {
   const loadClasses = async () => {
     try {
       const contracts = await tutorAPI.getMyClasses({ limit: 1000 });
-      const classesData = contracts.map(contract => ({
-        ...contract.lopHoc,
-        maHopDong: contract.maHopDong,
-        trangThaiHopDong: contract.trangThai,
-      }));
+      const classesData = contracts
+        .map(contract => ({
+          ...contract.lopHoc,
+          maHopDong: contract.maHopDong,
+          trangThaiHopDong: contract.trangThai,
+        }))
+        // Filter: Ẩn các lớp đã kết thúc hoặc bị hủy
+        .filter(cls => cls.trangThai !== 'KetThuc' && cls.trangThai !== 'Huy');
       setClasses(classesData);
     } catch (err) {
       console.error('Failed to load classes:', err);

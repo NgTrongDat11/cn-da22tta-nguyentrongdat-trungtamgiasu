@@ -133,7 +133,7 @@ const TutorRegistrations = () => {
                   <div>
                     <h3>{reg.hocVien?.hoTen}</h3>
                     <p className="text-muted">
-                      📚 {reg.lopHoc.tenLop} • � {reg.hocVien?.soDienThoai || 'Chưa cập nhật'}
+                      📚 {reg.lopHoc.tenLop} • 📞 {reg.hocVien?.soDienThoai || 'Chưa cập nhật'}
                     </p>
                     <p className="text-small">
                       Đăng ký: {new Date(reg.ngayDangKy).toLocaleDateString('vi-VN')}

@@ -59,6 +59,24 @@
   color: white;
 }
 
+.stat-card.warning-card {
+  background: linear-gradient(135deg, #ffd54f 0%, #ffb74d 100%);
+  color: #5d4037;
+  border: 2px solid #ffca28;
+  animation: pulse 2s infinite;
+}
+
+.stat-card.warning-card h3,
+.stat-card.warning-card .stat-value,
+.stat-card.warning-card small {
+  color: #5d4037 !important;
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3); }
+  50% { box-shadow: 0 4px 20px rgba(255, 193, 7, 0.5); }
+}
+
 .stat-card h3 {
   font-size: 0.95rem;
   margin-bottom: 0.5rem;
@@ -405,7 +423,8 @@
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
-.modal-actions {
+.modal-actions,
+.modal-footer {
   display: flex;
   gap: 1rem;
   justify-content: flex-end;

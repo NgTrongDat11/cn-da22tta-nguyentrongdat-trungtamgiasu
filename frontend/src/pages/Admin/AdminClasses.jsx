@@ -13,8 +13,10 @@ const AdminClasses = () => {
   const [classes, setClasses] = useState([]);
   const [tutors, setTutors] = useState([]);
   const [subjects, setSubjects] = useState([]);
+  const [expiringSoon, setExpiringSoon] = useState([]);
+  const [selectedClasses, setSelectedClasses] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState({ trangThai: '', search: '' });
+  const [filter, setFilter] = useState({ trangThai: '', search: '', sortBy: '' });
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -25,7 +27,7 @@ const AdminClasses = () => {
   const [showClassModal, setShowClassModal] = useState(false);
   const [modalLoading, setModalLoading] = useState(false);
   const [selectedClass, setSelectedClass] = useState(null);
-  const [assignData, setAssignData] = useState({ maGiaSu: '', luongTheoGio: '' });
+  const [assignData, setAssignData] = useState({ maGiaSu: '' });
   const [classFormData, setClassFormData] = useState({
     maMon: '',
     tenLop: '',
@@ -38,6 +40,7 @@ const AdminClasses = () => {
 
   useEffect(() => {
     loadData();
+    loadExpiringSoon();
   }, [filter, pagination.page]);
 
   const loadData = async () => {
@@ -54,7 +57,18 @@ const AdminClasses = () => {
       ]);
       
       // Handle paginated response
-      setClasses(classesResponse?.data || []);
+      let classList = classesResponse?.data || [];
+      
+      // Sort if needed
+      if (filter.sortBy === 'ngayKetThuc') {
+        classList = [...classList].sort((a, b) => {
+          if (!a.ngayKetThuc) return 1;
+          if (!b.ngayKetThuc) return -1;
+          return new Date(a.ngayKetThuc) - new Date(b.ngayKetThuc);
+        });
+      }
+      
+      setClasses(classList);
       setPagination(prev => ({
         ...prev,
         total: classesResponse?.pagination?.total || 0,
@@ -75,6 +89,15 @@ const AdminClasses = () => {
     }
   };
 
+  const loadExpiringSoon = async () => {
+    try {
+      const data = await adminAPI.getExpiringSoon(7);
+      setExpiringSoon(data);
+    } catch (err) {
+      console.error('Failed to load expiring classes:', err);
+    }
+  };
+
   const handleAssignTutor = async (e) => {
     e.preventDefault();
     try {
@@ -82,7 +105,7 @@ const AdminClasses = () => {
       toast.success('Gán gia sư thành công!');
       setShowAssignModal(false);
       setSelectedClass(null);
-      setAssignData({ maGiaSu: '', luongTheoGio: '' });
+      setAssignData({ maGiaSu: '' });
       await loadData();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Không thể gán gia sư');
@@ -91,7 +114,7 @@ const AdminClasses = () => {
 
   const openAssignModal = (cls) => {
     setSelectedClass(cls);
-    setAssignData({ maGiaSu: '', luongTheoGio: cls.hocPhi || '' });
+    setAssignData({ maGiaSu: '' });
     setShowAssignModal(true);
   };
 
@@ -227,6 +250,94 @@ const AdminClasses = () => {
     }
   };
 
+  const handleRemoveTutor = async (cls) => {
+    const giaSu = cls.hopDongs?.find(hd => hd.trangThai === 'DangDay')?.giaSu;
+    const tenGiaSu = giaSu?.hoTen || 'gia sư';
+    
+    if (!window.confirm(`Bạn có chắc muốn gỡ ${tenGiaSu} khỏi lớp "${cls.tenLop}"?\n\nSau khi gỡ, bạn có thể gán gia sư khác hoặc xóa lớp.`)) return;
+    
+    try {
+      await adminAPI.removeTutor(cls.maLop);
+      toast.success(`Đã gỡ ${tenGiaSu} khỏi lớp thành công!`);
+      await loadData();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Không thể gỡ gia sư');
+    }
+  };
+
+  const handleFinishClass = async (cls) => {
+    if (!window.confirm(`Xác nhận kết thúc lớp "${cls.tenLop}"?\n\nLớp sẽ chuyển sang trạng thái "Đã Kết Thúc" và không thể hoàn tác.`)) return;
+    
+    try {
+      await adminAPI.finishClass(cls.maLop, {
+        lyDoKetThuc: 'Hoàn thành khóa học'
+      });
+      toast.success('Đã kết thúc lớp học thành công!');
+      await loadData();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Không thể kết thúc lớp học');
+    }
+  };
+
+  const handleCancelClass = async (cls) => {
+    const lyDoHuy = window.prompt(`Nhập lý do hủy lớp "${cls.tenLop}":`);
+    if (!lyDoHuy || lyDoHuy.trim() === '') {
+      toast.warning('Vui lòng nhập lý do hủy lớp');
+      return;
+    }
+    
+    try {
+      await adminAPI.cancelClass(cls.maLop, lyDoHuy.trim());
+      toast.success('Đã hủy lớp học!');
+      await loadData();
+      await loadExpiringSoon();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Không thể hủy lớp học');
+    }
+  };
+
+  const handleSelectClass = (maLop) => {
+    setSelectedClasses(prev => 
+      prev.includes(maLop) 
+        ? prev.filter(id => id !== maLop)
+        : [...prev, maLop]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedClasses.length === classes.length) {
+      setSelectedClasses([]);
+    } else {
+      setSelectedClasses(classes.map(cls => cls.maLop));
+    }
+  };
+
+  const handleBulkFinish = async () => {
+    if (selectedClasses.length === 0) {
+      toast.warning('Vui lòng chọn ít nhất một lớp');
+      return;
+    }
+
+    const lyDoKetThuc = window.prompt(
+      `Xác nhận kết thúc ${selectedClasses.length} lớp học?\n\nNhập lý do kết thúc:`
+    );
+    
+    if (!lyDoKetThuc || lyDoKetThuc.trim() === '') {
+      toast.warning('Vui lòng nhập lý do kết thúc');
+      return;
+    }
+
+    try {
+      await adminAPI.bulkFinishClasses(selectedClasses, lyDoKetThuc.trim());
+      toast.success(`Đã kết thúc ${selectedClasses.length} lớp học thành công!`);
+      setSelectedClasses([]);
+      await loadData();
+      await loadExpiringSoon();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Không thể kết thúc các lớp học');
+    }
+  };
+
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= pagination.totalPages) {
       setPagination(prev => ({ ...prev, page: newPage }));
@@ -259,6 +370,15 @@ const AdminClasses = () => {
             <option value="Huy">Đã Hủy</option>
           </select>
 
+          <select 
+            value={filter.sortBy} 
+            onChange={(e) => setFilter({...filter, sortBy: e.target.value})}
+            className="filter-select"
+          >
+            <option value="">Sắp xếp mặc định</option>
+            <option value="ngayKetThuc">Gần hết hạn nhất</option>
+          </select>
+
           <input
             type="text"
             placeholder="Tìm theo tên lớp..."
@@ -267,6 +387,66 @@ const AdminClasses = () => {
             className="filter-input"
           />
         </div>
+
+        {/* Expiring Soon Alert */}
+        {expiringSoon.length > 0 && (
+          <div className="alert alert-warning" style={{
+            backgroundColor: '#fff3cd',
+            border: '1px solid #ffc107',
+            borderRadius: '8px',
+            padding: '16px',
+            marginBottom: '20px'
+          }}>
+            <h3 style={{marginTop: 0, color: '#856404'}}>⚠️ Lớp Sắp Hết Hạn (7 ngày tới)</h3>
+            <div style={{overflowX: 'auto'}}>
+              <table style={{width: '100%', fontSize: '0.9em'}}>
+                <thead>
+                  <tr>
+                    <th style={{textAlign: 'left', padding: '8px'}}>Tên Lớp</th>
+                    <th style={{textAlign: 'left', padding: '8px'}}>Môn</th>
+                    <th style={{textAlign: 'left', padding: '8px'}}>Gia Sư</th>
+                    <th style={{textAlign: 'left', padding: '8px'}}>Ngày Kết Thúc</th>
+                    <th style={{textAlign: 'center', padding: '8px'}}>Còn Lại</th>
+                    <th style={{textAlign: 'center', padding: '8px'}}>Thao Tác</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {expiringSoon.map(cls => (
+                    <tr key={cls.maLop}>
+                      <td style={{padding: '8px'}}><strong>{cls.tenLop}</strong></td>
+                      <td style={{padding: '8px'}}>{cls.tenMon}</td>
+                      <td style={{padding: '8px'}}>{cls.giaSu}</td>
+                      <td style={{padding: '8px'}}>{new Date(cls.ngayKetThuc).toLocaleDateString('vi-VN')}</td>
+                      <td style={{textAlign: 'center', padding: '8px'}}>
+                        <span style={{
+                          backgroundColor: cls.daysRemaining <= 2 ? '#dc3545' : '#ffc107',
+                          color: 'white',
+                          padding: '4px 8px',
+                          borderRadius: '4px',
+                          fontWeight: 'bold'
+                        }}>
+                          {cls.daysRemaining} ngày
+                        </span>
+                      </td>
+                      <td style={{textAlign: 'center', padding: '8px'}}>
+                        <button 
+                          onClick={() => {
+                            const classObj = classes.find(c => c.maLop === cls.maLop);
+                            if (classObj) handleFinishClass(classObj);
+                          }}
+                          className="btn btn-sm btn-success"
+                          style={{fontSize: '0.85em'}}
+                        >
+                          🏁 Kết Thúc Ngay
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
         {/* Classes Table */}
         <div className="table-container">
@@ -285,7 +465,8 @@ const AdminClasses = () => {
             </thead>
             <tbody>
               {classes.map((cls) => {
-                const giaSu = cls.hopDongs && cls.hopDongs.length > 0 ? cls.hopDongs[0].giaSu : null;
+                // Chỉ lấy gia sư từ hợp đồng đang dạy (DangDay), bỏ qua TamDung
+                const giaSu = cls.hopDongs?.find(hd => hd.trangThai === 'DangDay')?.giaSu;
                 const soHocVien = cls.soHocVien ?? cls._count?.dangKys ?? 0;
                 
                 return (
@@ -332,7 +513,7 @@ const AdminClasses = () => {
                       )}
                     </td>
                     <td>
-                      <div style={{display: 'flex', gap: '8px'}}>
+                      <div style={{display: 'flex', gap: '8px', flexWrap: 'wrap'}}>
                         <button 
                           onClick={() => openEditModal(cls)}
                           className="btn btn-sm btn-secondary"
@@ -340,15 +521,27 @@ const AdminClasses = () => {
                         >
                           ✏️ Sửa
                         </button>
-                        {cls.trangThai === 'Huy' && (
+                        {/* Xóa: cho phép nếu Huy hoặc DangTuyen không có gia sư đang dạy */}
+                        {(cls.trangThai === 'Huy' || (cls.trangThai === 'DangTuyen' && !giaSu)) && (
                           <button 
                             onClick={() => handleDelete(cls)}
                             className="btn btn-sm btn-danger"
-                            title="Xóa lớp học đã hủy"
+                            title="Xóa lớp học"
                           >
                             🗑️ Xóa
                           </button>
                         )}
+                        {/* Gỡ gia sư: cho phép nếu DangTuyen và có gia sư đang dạy */}
+                        {giaSu && cls.trangThai === 'DangTuyen' && (
+                          <button 
+                            onClick={() => handleRemoveTutor(cls)}
+                            className="btn btn-sm btn-warning"
+                            title="Gỡ gia sư khỏi lớp"
+                          >
+                            🔓 Gỡ GS
+                          </button>
+                        )}
+                        {/* Gán gia sư: cho phép nếu DangTuyen và chưa có gia sư */}
                         {!giaSu && cls.trangThai === 'DangTuyen' && (
                           <button 
                             onClick={() => openAssignModal(cls)}
@@ -356,6 +549,24 @@ const AdminClasses = () => {
                             title="Gán gia sư"
                           >
                             👨‍🏫 Gán
+                          </button>
+                        )}
+                        {cls.trangThai === 'DangDay' && (
+                          <button 
+                            onClick={() => handleFinishClass(cls)}
+                            className="btn btn-sm btn-warning"
+                            title="Kết thúc lớp học"
+                          >
+                            🏁 Kết Thúc
+                          </button>
+                        )}
+                        {cls.trangThai === 'DangTuyen' && (
+                          <button 
+                            onClick={() => handleCancelClass(cls)}
+                            className="btn btn-sm btn-danger"
+                            title="Hủy lớp học"
+                          >
+                            ✕ Hủy
                           </button>
                         )}
                       </div>
@@ -442,8 +653,8 @@ const AdminClasses = () => {
                     className="form-input"
                   >
                     <option value="">-- Chọn hình thức --</option>
-                    <option value="Offline">Offline (Tại nhà)</option>
-                    <option value="Online">Online (Video call)</option>
+                    <option value="Offline">Offline</option>
+                    <option value="Online">Online</option>
                   </select>
                 </div>
 
@@ -643,16 +854,6 @@ const AdminClasses = () => {
                       </option>
                     ))}
                   </select>
-                </div>
-                <div className="form-group">
-                  <label>Lương Theo Giờ (VND)</label>
-                  <input
-                    type="number"
-                    value={assignData.luongTheoGio}
-                    onChange={(e) => setAssignData({...assignData, luongTheoGio: e.target.value})}
-                    className="form-input"
-                    placeholder="Để trống sẽ dùng lương mặc định của gia sư"
-                  />
                 </div>
                 <div className="modal-actions">
                   <button type="button" onClick={() => setShowAssignModal(false)} className="btn btn-secondary">

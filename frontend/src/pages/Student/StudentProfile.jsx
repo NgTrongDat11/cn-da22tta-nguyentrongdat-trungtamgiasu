@@ -98,23 +98,6 @@ const StudentProfile = () => {
         <div className="profile-card">
           {!editing ? (
             <div className="profile-view">
-              <div className="avatar-section">
-                {profile.hinhAnh ? (
-                  <img src={profile.hinhAnh} alt="Avatar" className="profile-avatar" />
-                ) : (
-                  <div className="profile-avatar-placeholder">👤</div>
-                )}
-                <label className="avatar-upload-btn">
-                  {uploadingAvatar ? 'Đang tải...' : '📷 Đổi ảnh'}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarUpload}
-                    disabled={uploadingAvatar}
-                    style={{ display: 'none' }}
-                  />
-                </label>
-              </div>
               <div className="profile-info">
                 <div className="info-item">
                   <span className="info-label">Họ tên:</span>
