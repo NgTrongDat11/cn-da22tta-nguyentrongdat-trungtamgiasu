@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import DashboardLayout from '../../components/Layout/DashboardLayout';
 import apiClient from '../../api/client';
-import { studentAPI } from '../../api/services';
+import { studentAPI, authAPI } from '../../api/services';
 import './Student.css';
 
 const StudentProfile = () => {
@@ -14,6 +14,14 @@ const StudentProfile = () => {
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({});
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  
+  // State cho đổi mật khẩu
+  const [passwordData, setPasswordData] = useState({
+    matKhauCu: '',
+    matKhauMoi: '',
+    xacNhanMatKhau: ''
+  });
+  const [changingPassword, setChangingPassword] = useState(false);
 
   useEffect(() => {
     loadProfile();
@@ -174,9 +182,82 @@ const StudentProfile = () => {
             </form>
           )}
         </div>
+
+        {/* Card Đổi Mật Khẩu */}
+        <div className="password-change-card">
+          <h3>Đổi Mật Khẩu</h3>
+          <form onSubmit={handleChangePassword} className="password-form">
+            <div className="form-group">
+              <label>Mật khẩu hiện tại *</label>
+              <input
+                type="password"
+                value={passwordData.matKhauCu}
+                onChange={(e) => setPasswordData({ ...passwordData, matKhauCu: e.target.value })}
+                required
+                className="form-input"
+                placeholder="Nhập mật khẩu hiện tại"
+              />
+            </div>
+            <div className="form-group">
+              <label>Mật khẩu mới *</label>
+              <input
+                type="password"
+                value={passwordData.matKhauMoi}
+                onChange={(e) => setPasswordData({ ...passwordData, matKhauMoi: e.target.value })}
+                required
+                minLength={6}
+                className="form-input"
+                placeholder="Ít nhất 6 ký tự"
+              />
+            </div>
+            <div className="form-group">
+              <label>Xác nhận mật khẩu mới *</label>
+              <input
+                type="password"
+                value={passwordData.xacNhanMatKhau}
+                onChange={(e) => setPasswordData({ ...passwordData, xacNhanMatKhau: e.target.value })}
+                required
+                className="form-input"
+                placeholder="Nhập lại mật khẩu mới"
+              />
+            </div>
+            <button 
+              type="submit" 
+              className="btn btn-primary"
+              disabled={changingPassword}
+            >
+              {changingPassword ? 'Đang xử lý...' : 'Đổi Mật Khẩu'}
+            </button>
+          </form>
+        </div>
       </div>
     </DashboardLayout>
   );
+
+  async function handleChangePassword(e) {
+    e.preventDefault();
+    
+    if (passwordData.matKhauMoi !== passwordData.xacNhanMatKhau) {
+      toast.error('Mật khẩu mới và xác nhận không khớp');
+      return;
+    }
+    
+    if (passwordData.matKhauMoi.length < 6) {
+      toast.error('Mật khẩu mới phải có ít nhất 6 ký tự');
+      return;
+    }
+    
+    setChangingPassword(true);
+    try {
+      await authAPI.changePassword(passwordData.matKhauCu, passwordData.matKhauMoi);
+      toast.success('Đổi mật khẩu thành công!');
+      setPasswordData({ matKhauCu: '', matKhauMoi: '', xacNhanMatKhau: '' });
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Đổi mật khẩu thất bại');
+    } finally {
+      setChangingPassword(false);
+    }
+  }
 };
 
 export default StudentProfile;

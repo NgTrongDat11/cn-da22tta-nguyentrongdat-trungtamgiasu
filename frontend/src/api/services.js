@@ -29,6 +29,11 @@ export const authAPI = {
     const { data } = await apiClient.get('/auth/profile');
     return data.data;
   },
+
+  changePassword: async (matKhauCu, matKhauMoi) => {
+    const { data } = await apiClient.put('/auth/change-password', { matKhauCu, matKhauMoi });
+    return data;
+  },
 };
 
 export const adminAPI = {
