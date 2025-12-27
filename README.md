@@ -1,73 +1,165 @@
 # 🎓 Trung Tâm Gia Sư (Tutoring Center Platform)
 
-**Skeleton project** cho nền tảng kết nối học sinh với gia sư trực tuyến.
-
-> ⚠️ **Đây là SKELETON** - chỉ có cấu trúc, config, templates. Chưa có implementation logic.
+Nền tảng kết nối học viên với gia sư trực tuyến - **Full-stack production application**.
 
 ## ✨ Tính năng
 
-### Học sinh
+### 👨‍🎓 Học Viên
 
-- ✅ Đăng ký & đăng nhập
-- ✅ Tạo hồ sơ (trường, lớp, môn học)
-- ✅ Tìm kiếm gia sư theo môn + giá
-- ✅ Đặt lịch học
+- ✅ Đăng ký & đăng nhập với JWT authentication
+- ✅ Quản lý hồ sơ cá nhân (thông tin, hình ảnh)
+- ✅ Tìm kiếm và đăng ký lớp học theo môn
+- ✅ Xem danh sách lớp học đã đăng ký
+- ✅ Đánh giá gia sư sau khóa học
+- ✅ Dashboard theo dõi tiến độ học tập
 
-### Gia sư
+### 👨‍🏫 Gia Sư
 
-- ✅ Đăng ký & đăng nhập
-- ✅ Tạo hồ sơ (chuyên ngành, giá dạy)
-- ✅ Xác nhận lịch học
-- ✅ Quản lý lịch dạy
+- ✅ Đăng ký & xác thực tài khoản
+- ✅ Tạo và quản lý hồ sơ (chuyên môn, kinh nghiệm, trình độ)
+- ✅ Nhận đăng ký từ học viên
+- ✅ Quản lý lịch giảng dạy
+- ✅ Ký hợp đồng giảng dạy
+- ✅ Dashboard thống kê học viên và thu nhập
+
+### 👨‍💼 Admin
+
+- ✅ Quản lý tài khoản (học viên, gia sư)
+- ✅ Quản lý môn học
+- ✅ Quản lý lớp học
+- ✅ Duyệt đăng ký học viên vào lớp
+- ✅ Phân công gia sư cho lớp học
+- ✅ Thống kê hệ thống
 
 ---
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: React 18 + Vite
-- **Backend**: Node.js + Express
-- **Database**: PostgreSQL 16 + Prisma ORM
-- **Auth**: JWT + bcryptjs
-- **DevOps**: Docker + Docker Compose
+### Frontend
+- **React 18** - UI framework
+- **Vite** - Build tool & dev server
+- **React Router DOM** - Client-side routing
+- **Axios** - HTTP client
+- **React Hot Toast** - Notifications
+- **Recharts** - Charts & visualizations
+
+### Backend
+- **Node.js** - Runtime environment
+- **Express.js** - Web framework
+- **Prisma ORM** - Database toolkit
+- **JWT** - Authentication
+- **bcryptjs** - Password hashing
+- **MinIO** - File storage (avatar uploads)
+
+### Database
+- **PostgreSQL 16** - Primary database
+
+### DevOps
+- **Docker & Docker Compose** - Containerization
+- **Nodemon** - Hot reload (development)
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Quick Start với Docker (Recommended)
 
-### Docker (Recommended)
+### Yêu cầu
+- Docker & Docker Compose
+- Git
+
+### Khởi động hệ thống
 
 ```bash
-# 1. Start services
+# 1. Clone repository
+git clone <repository-url>
+cd TrungTamGiaSu
+
+# 2. Tạo file .env cho backend
+cp backend/.env.example backend/.env
+
+# 3. Start all services
 docker-compose up -d
 
-# 2. Database migrations (first time)
-docker-compose exec backend npm run prisma:migrate
+# 4. Database migrations (chỉ lần đầu)
+docker-compose exec backend npx prisma migrate deploy
 
-# 3. Open browser
-# Frontend: http://localhost:3000
-# Backend: http://localhost:5000
-# Database GUI: npm run prisma:studio
+# 5. Seed initial data (optional)
+docker-compose exec backend npm run seed
+
+# 6. Truy cập ứng dụng
 ```
 
-### Manual Setup
+### URLs
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:5000
+- **Database**: localhost:5432
+- **Prisma Studio** (Database GUI):
+  ```bash
+  cd backend
+  npm run prisma:studio
+  ```
 
-**Backend:**
+### Tài khoản test
+
+Sau khi seed data:
+
+**Admin:**
+- Email: `admin@trungtamgiasu.vn`
+- Password: `admin123`
+
+**Gia Sư:**
+- Email: `giasu1@gmail.com`
+- Password: `123456`
+
+**Học Viên:**
+- Email: `hocvien1@gmail.com`
+- Password: `123456`
+
+### Manual Setup (Không dùng Docker)
+
+#### Backend
 
 ```bash
 cd backend
+
+# Install dependencies
 npm install
+
+# Setup environment
 cp .env.example .env
+# Cập nhật DATABASE_URL trong .env
+
+# Generate Prisma Client
+npm run prisma:generate
+
+# Run migrations
 npm run prisma:migrate
+
+# Seed data (optional)
+npm run seed
+
+# Start development server
 npm run dev
 ```
 
-**Frontend:**
+#### Frontend
 
 ```bash
 cd frontend
+
+# Install dependencies
 npm install
+
+# Setup environment (optional)
 cp .env.example .env
+
+# Start development server
 npm run dev
+```
+
+#### PostgreSQL
+Đảm bảo PostgreSQL đang chạy và cập nhật `DATABASE_URL` trong `backend/.env`:
+```
+DATABASE_URL=postgresql://postgres:postgres123@localhost:5432/trung_tam_gia_su?schema=public
 ```
 
 ---
@@ -78,95 +170,221 @@ npm run dev
 TrungTamGiaSu/
 ├── backend/
 │   ├── src/
-│   │   ├── controllers/  # Business logic templates
-│   │   ├── routes/       # API endpoints
-│   │   ├── middleware/   # Auth, error handler
-│   │   ├── config/       # Prisma Client
-│   │   └── utils/        # Helpers (response, validators)
+│   │   ├── config/           # Database & environment config
+│   │   │   ├── prisma.js     # Prisma client instance
+│   │   │   ├── minio.js      # MinIO storage setup
+│   │   │   └── database.js   # Database connection
+│   │   ├── controllers/      # Business logic
+│   │   │   ├── authController.js
+│   │   │   ├── adminController.js
+│   │   │   ├── giaSuController.js
+│   │   │   ├── hocVienController.js
+│   │   │   ├── lopHocController.js
+│   │   │   ├── monHocController.js
+│   │   │   └── ratingController.js
+│   │   ├── middleware/       # Express middleware
+│   │   │   ├── auth.js       # JWT authentication
+│   │   │   ├── errorHandler.js
+│   │   │   ├── upload.js     # File upload (Multer)
+│   │   │   └── validate.js   # Request validation
+│   │   ├── routes/           # API endpoints
+│   │   │   ├── auth.js
+│   │   │   ├── admin.js
+│   │   │   ├── giaSu.js
+│   │   │   ├── hocVien.js
+│   │   │   ├── lopHoc.js
+│   │   │   └── monHoc.js
+│   │   ├── services/         # External services
+│   │   │   └── uploadService.js
+│   │   ├── utils/            # Helper functions
+│   │   │   ├── response.js   # Standardized API responses
+│   │   │   ├── jwt.js        # JWT utilities
+│   │   │   ├── pagination.js # Pagination helper
+│   │   │   └── validators.js # Custom validators
+│   │   ├── validators/       # Validation schemas
+│   │   ├── constants/        # App constants
+│   │   ├── index.js          # Entry point
+│   │   └── seed.js           # Database seeder
 │   ├── prisma/
-│   │   └── schema.prisma # Database schema ✅ (DETAILED)
-│   ├── .env              # Environment config ✅
-│   ├── Dockerfile        # Container config ✅
-│   └── package.json      # Dependencies ✅
+│   │   ├── schema.prisma     # Database schema
+│   │   └── migrations/       # Migration history
+│   ├── .env                  # Environment variables
+│   ├── Dockerfile            # Backend container
+│   └── package.json
 │
 ├── frontend/
 │   ├── src/
-│   │   ├── components/   # UI components (templates)
-│   │   ├── pages/        # Page components (to create)
-│   │   ├── services/     # API calls ✅
-│   │   ├── hooks/        # Custom hooks (templates)
-│   │   ├── types/        # Enums & types ✅
-│   │   └── utils/        # Constants ✅
-│   ├── vite.config.js    # Build config ✅
-│   ├── Dockerfile        # Container config ✅
-│   └── package.json      # Dependencies ✅
+│   │   ├── components/       # Reusable components
+│   │   │   ├── Layout/
+│   │   │   │   ├── Header.jsx
+│   │   │   │   ├── Footer.jsx
+│   │   │   │   ├── Sidebar.jsx
+│   │   │   │   ├── DashboardLayout.jsx
+│   │   │   │   └── Landing.jsx
+│   │   │   └── Pagination/
+│   │   ├── pages/            # Page components
+│   │   │   ├── Landing/      # Homepage
+│   │   │   ├── Login/
+│   │   │   ├── Register/
+│   │   │   ├── Dashboard/    # Role-based dashboards
+│   │   │   ├── Admin/        # Admin pages
+│   │   │   ├── Tutor/        # Gia sư pages
+│   │   │   └── Student/      # Học viên pages
+│   │   ├── api/              # API integration
+│   │   │   ├── client.js     # Axios instance
+│   │   │   └── services.js   # API service functions
+│   │   ├── contexts/         # React contexts
+│   │   │   └── AuthContext.jsx
+│   │   ├── hooks/            # Custom hooks
+│   │   ├── utils/            # Helper functions
+│   │   ├── styles/           # Global styles
+│   │   ├── App.jsx           # Root component
+│   │   └── main.jsx          # Entry point
+│   ├── Dockerfile            # Frontend container
+│   ├── vite.config.js        # Vite configuration
+│   └── package.json
 │
-├── docker-compose.yml    # Multi-container setup ✅
-├── DATABASE.md           # Schema & Prisma guide
-├── SETUP.md              # Detailed setup guide
-├── SKELETON_GUIDE.md     # Implementation guide
-└── README.md             # (This file)
+├── docker-compose.yml        # Multi-container orchestration
+├── schema.sql                # Database schema backup
+├── seed.sql                  # Seed data backup
+├── .gitignore
+└── README.md                 # This file
 ```
 
 ---
 
 ## 🗄️ Database Schema
 
-**4 Models:**
+### Models (9 tables)
+
+1. **TaiKhoan** - User accounts với role-based access
+2. **GiaSu** - Tutor profiles
+3. **HocVien** - Student profiles  
+4. **MonHoc** - Subjects/Courses
+5. **LopHoc** - Classes với trạng thái workflow
+6. **DangKy** - Student registrations
+7. **HopDongGiangDay** - Teaching contracts
+8. **LichHoc** - Class schedules
+9. **DanhGia** - Ratings & reviews
+
+### Relationships
 
 ```
-User ──→ Student (1-1)
-    └──→ Tutor (1-1)
+TaiKhoan (1:1) → GiaSu
+         (1:1) → HocVien
 
-Student ┐
-        ├──→ Booking (N-N)
-Tutor ──┘
+HocVien (N:M) → LopHoc (qua DangKy)
+GiaSu   (N:M) → LopHoc (qua HopDongGiangDay)
+MonHoc  (1:N) → LopHoc
+
+LopHoc  (1:N) → DanhGia
+        (1:N) → LichHoc
 ```
 
-**Models:**
+### Status Workflows
 
-- **User**: email, password, role (STUDENT|TUTOR|ADMIN)
-- **Student**: grade, school, subjects, bio
-- **Tutor**: specialization, experience, hourlyRate, isVerified
-- **Booking**: studentId, tutorId, subject, status, scheduledDate
+**LopHoc (Classes):**
+```
+DangTuyen → DangDay → HoanThanh
+           ↘ DaHuy
+```
 
-Status flow: `PENDING → CONFIRMED → COMPLETED` (or `CANCELLED`)
+**DangKy (Registrations):**
+```
+ChoDuyet → DaDuyet → HoanThanh
+         ↘ TuChoi
+```
 
-👉 See: **[DATABASE.md](./DATABASE.md)** for detailed schema with examples
+**HopDongGiangDay (Contracts):**
+```
+DangChoDuyet → DaDuyet → DangThucHien → HoanThanh
+             ↘ BiTuChoi ↘ DaHuy
+```
+
+👉 Chi tiết: [backend/DATABASE.md](backend/DATABASE.md)
 
 ---
 
 ## 🔌 API Endpoints
 
+### Authentication
 ```
-POST   /api/auth/register
-POST   /api/auth/login
-POST   /api/auth/logout
-POST   /api/auth/refresh-token
-
-GET    /api/users/me
-PUT    /api/users/me
-DELETE /api/users/me
-
-GET    /api/tutors
-GET    /api/tutors/:id
-POST   /api/tutors
-PUT    /api/tutors/:id
-
-POST   /api/bookings
-GET    /api/bookings/me
-PUT    /api/bookings/:id
-DELETE /api/bookings/:id
+POST   /api/auth/register        # Đăng ký tài khoản
+POST   /api/auth/login           # Đăng nhập
+POST   /api/auth/logout          # Đăng xuất
+GET    /api/auth/me              # Lấy thông tin user hiện tại
 ```
 
-Response format:
+### Admin
+```
+GET    /api/admin/dashboard      # Thống kê tổng quan
+GET    /api/admin/users          # Danh sách tài khoản
+PUT    /api/admin/users/:id      # Cập nhật tài khoản
+DELETE /api/admin/users/:id      # Xóa tài khoản
+GET    /api/admin/classes        # Quản lý lớp học
+POST   /api/admin/classes        # Tạo lớp học
+PUT    /api/admin/approve/:id    # Duyệt đăng ký
+```
 
+### Môn Học
+```
+GET    /api/monhoc               # Danh sách môn học
+POST   /api/monhoc               # Tạo môn học (admin)
+PUT    /api/monhoc/:id           # Cập nhật môn học (admin)
+DELETE /api/monhoc/:id           # Xóa môn học (admin)
+```
+
+### Lớp Học
+```
+GET    /api/lophoc               # Danh sách lớp học (có filter)
+GET    /api/lophoc/:id           # Chi tiết lớp học
+POST   /api/lophoc               # Tạo lớp học (admin)
+PUT    /api/lophoc/:id           # Cập nhật lớp học
+DELETE /api/lophoc/:id           # Xóa lớp học
+```
+
+### Gia Sư
+```
+GET    /api/giasu                # Danh sách gia sư
+GET    /api/giasu/:id            # Chi tiết gia sư
+POST   /api/giasu/profile        # Tạo/Cập nhật profile
+POST   /api/giasu/avatar         # Upload avatar
+GET    /api/giasu/classes        # Lớp học của gia sư
+GET    /api/giasu/contracts      # Hợp đồng của gia sư
+```
+
+### Học Viên
+```
+GET    /api/hocvien              # Danh sách học viên
+GET    /api/hocvien/:id          # Chi tiết học viên
+POST   /api/hocvien/profile      # Tạo/Cập nhật profile
+POST   /api/hocvien/avatar       # Upload avatar
+POST   /api/hocvien/register     # Đăng ký lớp học
+GET    /api/hocvien/registrations # Các lớp đã đăng ký
+POST   /api/hocvien/rate         # Đánh giá gia sư
+```
+
+### Response Format
 ```json
 {
   "success": true,
-  "message": "...",
-  "data": {...},
-  "error": null
+  "message": "Success message",
+  "data": { ... },
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 100,
+    "pages": 10
+  }
+}
+```
+
+### Error Response
+```json
+{
+  "success": false,
+  "message": "Error message",
+  "errors": [ ... ]
 }
 ```
 
@@ -174,148 +392,199 @@ Response format:
 
 ## 💻 Development
 
-### Backend
+### Backend Commands
 
 ```bash
 cd backend
 
-npm run dev              # Start dev server
-npm run prisma:migrate  # Create migrations
-npm run prisma:studio   # View database GUI
-npm run prisma:reset    # Reset database
+npm run dev              # Start dev server (nodemon)
+npm run start            # Production server
+npm run prisma:generate  # Generate Prisma Client
+npm run prisma:migrate   # Create & apply migrations
+npm run prisma:studio    # Open Prisma Studio (DB GUI)
+npm run prisma:push      # Push schema changes (dev)
+npm run seed             # Seed initial data
 ```
 
-**Implement:**
-
-1. `src/controllers/*.js` - Add business logic
-2. `src/middleware/*.js` - Add auth/error handling
-3. Tests & validation
-
-### Frontend
+### Frontend Commands
 
 ```bash
 cd frontend
 
-npm run dev     # Start dev server
+npm run dev     # Start dev server (Vite)
 npm run build   # Build for production
-npm run preview # Preview build
+npm run preview # Preview production build
 ```
 
-**Create:**
-
-1. `src/pages/*.jsx` - Page components
-2. `src/services/*.js` - Complete API calls
-3. Context/state management
-4. More UI components
-
----
-
-## 🐳 Docker
+### Docker Commands
 
 ```bash
-# Start
+# Start all services
 docker-compose up -d
 
-# View logs
-docker-compose logs -f backend
-
-# Migrations
-docker-compose exec backend npm run prisma:migrate
-
-# Stop
+# Stop all services
 docker-compose down
 
-# Full reset
+# View logs
+docker-compose logs -f
+docker-compose logs -f backend
+docker-compose logs -f frontend
+
+# Rebuild containers
+docker-compose up -d --build
+
+# Execute commands in container
+docker-compose exec backend npm run prisma:studio
+docker-compose exec backend npm run seed
+
+# Remove all data (volumes)
 docker-compose down -v
 ```
 
-Services:
+---
 
-- **postgres:5432** - Database
-- **backend:5000** - API Server
-- **frontend:3000** - React App
+## 🐳 Docker Services
+
+Container orchestration với Docker Compose:
+
+### Services
+
+| Service | Container | Port | Description |
+|---------|-----------|------|-------------|
+| **postgres** | ttgs-postgres | 5432 | PostgreSQL 16 database |
+| **backend** | ttgs-backend | 5000 | Node.js API server |
+| **frontend** | ttgs-frontend | 3000 | React + Vite app |
+
+### Networks
+- **ttgs-network** - Bridge network kết nối các services
+
+### Volumes
+- **postgres_data** - Persistent database storage
+
+### Health Checks
+- PostgreSQL có health check để đảm bảo backend khởi động sau khi DB ready
 
 ---
 
-## 📚 Documentation
+## � Environment Variables
 
-| File                                         | Content                          |
-| -------------------------------------------- | -------------------------------- |
-| **[DATABASE.md](./DATABASE.md)**             | Schema, Prisma queries, examples |
-| **[SETUP.md](./SETUP.md)**                   | Detailed setup (Docker & Manual) |
-| **[SKELETON_GUIDE.md](./SKELETON_GUIDE.md)** | Step-by-step implementation      |
+### Backend `.env`
 
----
-
-## 🔑 Environment Variables
-
-**Backend** (`.env`):
-
-```
+```env
+# Server
 NODE_ENV=development
 PORT=5000
-DATABASE_URL=postgresql://user:password@localhost:5432/trung_tam_gia_su
-JWT_SECRET=your-secret-key
-JWT_EXPIRE=7d
-API_URL=http://localhost:5000
+
+# Database
+DATABASE_URL=postgresql://postgres:postgres123@postgres:5432/trung_tam_gia_su?schema=public
+
+# JWT Authentication
+JWT_SECRET=your-super-secret-jwt-key-change-in-production
+JWT_EXPIRES_IN=7d
+
+# MinIO Storage (Optional)
+MINIO_ENDPOINT=localhost
+MINIO_PORT=9000
+MINIO_ACCESS_KEY=minioadmin
+MINIO_SECRET_KEY=minioadmin
+MINIO_BUCKET=avatars
 ```
 
-**Frontend** (`.env`):
+### Frontend `.env` (Optional)
 
+```env
+VITE_API_URL=http://localhost:5000/api
 ```
-VITE_API_URL=http://localhost:5000
+
+> ⚠️ **Security**: Đổi `JWT_SECRET` trong production!
+
+---
+
+## � Key Features Implementation
+
+### Authentication & Authorization
+- JWT-based authentication với Bearer token
+- Role-based access control (Admin, GiaSu, HocVien)
+- Protected routes & middleware
+- Password hashing với bcryptjs
+
+### File Upload
+- Avatar upload với Multer
+- MinIO integration cho object storage
+- File validation & size limits
+
+### API Design
+- RESTful API structure
+- Standardized response format
+- Comprehensive error handling
+- Request validation với express-validator
+- Pagination support
+
+### Frontend Architecture
+- Component-based structure
+- Context API cho global state (AuthContext)
+- Protected routes với React Router
+- Role-based dashboards
+- Responsive design
+
+---
+
+## 🚀 Production Deployment
+
+### Pre-deployment Checklist
+- [ ] Update JWT_SECRET trong production .env
+- [ ] Configure PostgreSQL cho production
+- [ ] Setup MinIO hoặc cloud storage cho avatars
+- [ ] Enable CORS cho production domain
+- [ ] Build frontend: `npm run build`
+- [ ] Run database migrations: `npm run prisma:migrate:deploy`
+- [ ] Test all critical endpoints
+
+### Docker Production
+```bash
+# Build production images
+docker-compose -f docker-compose.prod.yml build
+
+# Start services
+docker-compose -f docker-compose.prod.yml up -d
+
+# Run migrations
+docker-compose -f docker-compose.prod.yml exec backend npm run prisma:migrate:deploy
 ```
 
 ---
 
-## 📋 Implementation Checklist
+## 📝 Documentation
 
-- [ ] Backend: Implement auth (register, login, JWT)
-- [ ] Backend: Implement CRUD controllers
-- [ ] Backend: Add input validation
-- [ ] Backend: Add error handling
-- [ ] Database: Run migrations
-- [ ] Frontend: Create page components
-- [ ] Frontend: Implement auth flow
-- [ ] Frontend: Connect to API
-- [ ] Frontend: Add state management
-- [ ] Testing & deployment
+| File | Description |
+|------|-------------|
+| [backend/DATABASE.md](backend/DATABASE.md) | Database schema & Prisma details |
+| [backend/HUONG_DAN.md](backend/HUONG_DAN.md) | Backend implementation guide |
+| [backend/README.md](backend/README.md) | Backend-specific documentation |
+| [frontend/README.md](frontend/README.md) | Frontend-specific documentation |
 
-3. Tạo `.env` file và điền các biến:
-   ```
-   NODE_ENV=development
-   PORT=5000
-   MONGODB_URI=mongodb://...
-   JWT_SECRET=your-secret-key
-   JWT_EXPIRE=7d
-   ```
-4. Chạy dev: `npm run dev`
+---
 
-### Frontend
+## 🤝 Contributing
 
-1. Vào thư mục frontend: `cd frontend`
-2. Install packages: `npm install`
-3. Chạy dev: `npm run dev`
+1. Fork the repository
+2. Create feature branch: `git checkout -b feature/AmazingFeature`
+3. Commit changes: `git commit -m 'Add some AmazingFeature'`
+4. Push to branch: `git push origin feature/AmazingFeature`
+5. Open Pull Request
 
-## Các file cần implement
+---
 
-### Backend
+## 📄 License
 
-- Controllers: Business logic cho auth, user, tutor, booking
-- Models: MongoDB schemas
-- Routes: API endpoints
-- Middleware: Authentication, validation, error handling
+This project is for educational purposes.
 
-### Frontend
+---
 
-- Pages: HomePage, LoginPage, TutorListPage, TutorDetailPage, BookingPage
-- Services: API calls (đã setup structure)
-- Context: Global state management
-- Components: Reusable UI
+## 👥 Contact & Support
 
-## Notes
+For questions or issues, please open an issue on GitHub.
 
-- Skeleton này chỉ là nền tảng, không có logic implementation
-- CSS được tổ chức tách biệt theo components
-- Frontend có type definitions sẵn
-- Backend config cơ bản sẵn có
+---
+
+**Built with ❤️ using React, Node.js, PostgreSQL & Docker**
