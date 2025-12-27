@@ -374,11 +374,12 @@ export const xoaTaiKhoan = async (req, res, next) => {
 /**
  * Quản lý lớp học - Danh sách tất cả
  * GET /api/admin/lop-hoc
+ * Query: page, limit, trangThai, maMon, search
  */
 export const getDanhSachLopHoc = async (req, res, next) => {
   try {
     const { page, limit, skip } = parsePagination(req.query);
-    const { trangThai, maMon } = req.query;
+    const { trangThai, maMon, search } = req.query;
 
     const where = {};
 
@@ -388,6 +389,14 @@ export const getDanhSachLopHoc = async (req, res, next) => {
 
     if (maMon) {
       where.maMon = maMon;
+    }
+
+    // Search by class name
+    if (search) {
+      where.OR = [
+        { tenLop: { contains: search, mode: "insensitive" } },
+        { moTa: { contains: search, mode: "insensitive" } },
+      ];
     }
 
     const total = await prisma.lopHoc.count({ where });

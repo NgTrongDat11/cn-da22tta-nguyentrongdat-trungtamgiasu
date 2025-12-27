@@ -322,11 +322,197 @@
   color: #1a202c;
 }
 
+/* LANDING FOOTER */
 .landing-footer {
-  background: #1a202c;
+  background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
   color: white;
-  padding: 2rem;
+  padding: 0;
+}
+
+.landing-footer .container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.landing-footer-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  padding: 3rem 0;
+}
+
+/* Footer Brand */
+.landing-footer-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.landing-footer-logo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.landing-footer-icon {
+  font-size: 3rem;
+  filter: drop-shadow(0 2px 4px rgba(102, 126, 234, 0.3));
+}
+
+.landing-footer-logo-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.landing-footer-brand-name {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: white;
+  letter-spacing: -0.5px;
+}
+
+.landing-footer-tagline {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.4;
+}
+
+.landing-footer-description {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.7;
+  margin: 0;
+  max-width: 350px;
+}
+
+/* Footer Contact */
+.landing-footer-contact {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.landing-footer-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: white;
+  margin: 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #667eea;
+  display: inline-block;
+}
+
+.landing-footer-contact-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.landing-footer-contact-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.landing-contact-icon {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  font-size: 1.1rem;
+}
+
+.landing-contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.landing-contact-label {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.landing-contact-value {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.5;
+}
+
+.landing-contact-link {
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.landing-contact-link:hover {
+  color: #667eea;
+}
+
+/* Footer Bottom */
+.landing-footer-bottom {
+  padding: 1.5rem 0;
+}
+
+.landing-footer-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  margin-bottom: 1.5rem;
+}
+
+.landing-footer-copyright {
+  font-size: 0.9rem;
+  color: white;
+  margin: 0;
   text-align: center;
+}
+
+/* Responsive Footer */
+@media (max-width: 768px) {
+  .landing-footer-content {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    padding: 2rem 0;
+  }
+  
+  .landing-footer-brand,
+  .landing-footer-contact {
+    align-items: center;
+    text-align: center;
+  }
+  
+  .landing-footer-logo {
+    flex-direction: column;
+  }
+  
+  .landing-footer-logo-text {
+    align-items: center;
+  }
+  
+  .landing-footer-description {
+    text-align: center;
+  }
+  
+  .landing-footer-contact-item {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .landing-contact-info {
+    align-items: center;
+  }
+  
+  .landing-footer-title {
+    text-align: center;
+  }
 }
 
 .btn {

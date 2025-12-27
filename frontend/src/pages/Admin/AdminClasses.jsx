@@ -16,7 +16,10 @@ const AdminClasses = () => {
   const [expiringSoon, setExpiringSoon] = useState([]);
   const [selectedClasses, setSelectedClasses] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState({ trangThai: '', search: '', sortBy: '' });
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [filter, setFilter] = useState({ trangThai: '' });
+  const [searchInput, setSearchInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState(''); // Giá trị thực sự dùng để gọi API
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -41,14 +44,15 @@ const AdminClasses = () => {
   useEffect(() => {
     loadData();
     loadExpiringSoon();
-  }, [filter, pagination.page]);
+  }, [filter, searchQuery, pagination.page]);
 
   const loadData = async () => {
     try {
       setLoading(true);
       const [classesResponse, tutorsResponse, subjectsData] = await Promise.all([
         adminAPI.getClasses({ 
-          ...filter, 
+          ...filter,
+          search: searchQuery || undefined,
           page: pagination.page, 
           limit: pagination.limit 
         }),
@@ -57,17 +61,7 @@ const AdminClasses = () => {
       ]);
       
       // Handle paginated response
-      let classList = classesResponse?.data || [];
-      
-      // Sort if needed
-      if (filter.sortBy === 'ngayKetThuc') {
-        classList = [...classList].sort((a, b) => {
-          if (!a.ngayKetThuc) return 1;
-          if (!b.ngayKetThuc) return -1;
-          return new Date(a.ngayKetThuc) - new Date(b.ngayKetThuc);
-        });
-      }
-      
+      const classList = classesResponse?.data || [];
       setClasses(classList);
       setPagination(prev => ({
         ...prev,
@@ -86,6 +80,7 @@ const AdminClasses = () => {
       toast.error('Không thể tải dữ liệu');
     } finally {
       setLoading(false);
+      setInitialLoading(false);
     }
   };
 
@@ -251,7 +246,10 @@ const AdminClasses = () => {
   };
 
   const handleRemoveTutor = async (cls) => {
-    const giaSu = cls.hopDongs?.find(hd => hd.trangThai === 'DangDay')?.giaSu;
+    // Lấy gia sư từ hợp đồng: ưu tiên DangDay, fallback sang DaKetThuc
+    const hopDongDangDay = cls.hopDongs?.find(hd => hd.trangThai === 'DangDay');
+    const hopDongDaKetThuc = cls.hopDongs?.find(hd => hd.trangThai === 'DaKetThuc');
+    const giaSu = hopDongDangDay?.giaSu || hopDongDaKetThuc?.giaSu;
     const tenGiaSu = giaSu?.hoTen || 'gia sư';
     
     if (!window.confirm(`Bạn có chắc muốn gỡ ${tenGiaSu} khỏi lớp "${cls.tenLop}"?\n\nSau khi gỡ, bạn có thể gán gia sư khác hoặc xóa lớp.`)) return;
@@ -344,7 +342,8 @@ const AdminClasses = () => {
     }
   };
 
-  if (loading) return <DashboardLayout><div className="loading">Đang tải...</div></DashboardLayout>;
+  // Only show full loading screen on initial load
+  if (initialLoading) return <DashboardLayout><div className="loading">Đang tải...</div></DashboardLayout>;
 
   return (
     <DashboardLayout>
@@ -370,22 +369,29 @@ const AdminClasses = () => {
             <option value="Huy">Đã Hủy</option>
           </select>
 
-          <select 
-            value={filter.sortBy} 
-            onChange={(e) => setFilter({...filter, sortBy: e.target.value})}
-            className="filter-select"
-          >
-            <option value="">Sắp xếp mặc định</option>
-            <option value="ngayKetThuc">Gần hết hạn nhất</option>
-          </select>
-
           <input
             type="text"
             placeholder="Tìm theo tên lớp..."
-            value={filter.search}
-            onChange={(e) => setFilter({...filter, search: e.target.value})}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                setSearchQuery(searchInput);
+                setPagination(prev => ({ ...prev, page: 1 }));
+              }
+            }}
             className="filter-input"
           />
+          <button 
+            onClick={() => {
+              setSearchQuery(searchInput);
+              setPagination(prev => ({ ...prev, page: 1 }));
+            }}
+            className="btn btn-primary"
+            disabled={loading}
+          >
+            {loading ? '⏳' : '🔍'} Tìm kiếm
+          </button>
         </div>
 
         {/* Expiring Soon Alert */}
@@ -465,8 +471,10 @@ const AdminClasses = () => {
             </thead>
             <tbody>
               {classes.map((cls) => {
-                // Chỉ lấy gia sư từ hợp đồng đang dạy (DangDay), bỏ qua TamDung
-                const giaSu = cls.hopDongs?.find(hd => hd.trangThai === 'DangDay')?.giaSu;
+                // Lấy gia sư từ hợp đồng: ưu tiên DangDay, fallback sang DaKetThuc nếu lớp đã kết thúc
+                const hopDongDangDay = cls.hopDongs?.find(hd => hd.trangThai === 'DangDay');
+                const hopDongDaKetThuc = cls.hopDongs?.find(hd => hd.trangThai === 'DaKetThuc');
+                const giaSu = hopDongDangDay?.giaSu || hopDongDaKetThuc?.giaSu;
                 const soHocVien = cls.soHocVien ?? cls._count?.dangKys ?? 0;
                 
                 return (

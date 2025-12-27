@@ -29,9 +29,9 @@ const createLopHocValidation = [
   body("hocPhi").isFloat({ min: 0 }).withMessage("Học phí phải là số dương"),
 ];
 
-// Public routes
-router.get("/", optionalAuth, getDanhSachLopHoc);
-router.get("/:id", getChiTietLopHoc);
+// Protected routes - Phải đăng nhập mới xem được
+router.get("/", auth, getDanhSachLopHoc);
+router.get("/:id", auth, getChiTietLopHoc);
 
 // Protected routes
 router.post(

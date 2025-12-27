@@ -23,10 +23,10 @@ const monHocValidation = [
   body("tenMon").notEmpty().withMessage("Tên môn học không được để trống"),
 ];
 
-// Public routes
-router.get("/", getDanhSachMonHoc);
-router.get("/all", getAllMonHoc);
-router.get("/:id", getChiTietMonHoc);
+// Protected routes - Phải đăng nhập mới xem được
+router.get("/", auth, getDanhSachMonHoc);
+router.get("/all", auth, getAllMonHoc);
+router.get("/:id", auth, getChiTietMonHoc);
 
 // Admin only routes
 router.post(

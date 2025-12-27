@@ -20,8 +20,8 @@ import { uploadImage } from "../middleware/upload.js";
 
 const router = express.Router();
 
-// Public routes
-router.get("/", optionalAuth, getDanhSachGiaSu);
+// Protected routes - Phải đăng nhập mới xem được
+router.get("/", auth, getDanhSachGiaSu);
 
 // Protected routes (Gia sư only) - MUST be before /:id
 router.get("/me", auth, getProfileGiaSu);
@@ -42,8 +42,8 @@ router.post(
   tutorRateStudent
 );
 
-// Dynamic route /:id must be last
-router.get("/:id", getChiTietGiaSu);
-router.get("/:id/danh-gia", getTutorRatings);
+// Dynamic route /:id must be last - Phải đăng nhập mới xem được
+router.get("/:id", auth, getChiTietGiaSu);
+router.get("/:id/danh-gia", auth, getTutorRatings);
 
 export default router;

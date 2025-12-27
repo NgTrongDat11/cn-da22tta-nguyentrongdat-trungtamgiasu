@@ -11,7 +11,10 @@ import '../Dashboard/Dashboard.css';
 const AdminUsers = () => {
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState({ role: '', trangThai: '', search: '' });
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [filter, setFilter] = useState({ role: '', trangThai: '' });
+  const [searchInput, setSearchInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState(''); // Giá trị thực sự dùng để gọi API
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -23,13 +26,14 @@ const AdminUsers = () => {
 
   useEffect(() => {
     loadAccounts();
-  }, [filter, pagination.page]);
+  }, [filter, searchQuery, pagination.page]);
 
   const loadAccounts = async () => {
     try {
       setLoading(true);
       const response = await adminAPI.getAccounts({ 
-        ...filter, 
+        ...filter,
+        search: searchQuery || undefined,
         page: pagination.page, 
         limit: pagination.limit 
       });
@@ -45,6 +49,7 @@ const AdminUsers = () => {
       toast.error('Không thể tải danh sách tài khoản');
     } finally {
       setLoading(false);
+      setInitialLoading(false);
     }
   };
 
@@ -92,7 +97,8 @@ const AdminUsers = () => {
     }
   };
 
-  if (loading) return <DashboardLayout><div className="loading">Đang tải...</div></DashboardLayout>;
+  // Only show full loading screen on initial load
+  if (initialLoading) return <DashboardLayout><div className="loading">Đang tải...</div></DashboardLayout>;
 
   return (
     <DashboardLayout>
@@ -130,10 +136,26 @@ const AdminUsers = () => {
           <input
             type="text"
             placeholder="Tìm theo tên hoặc email..."
-            value={filter.search}
-            onChange={(e) => setFilter({...filter, search: e.target.value})}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                setSearchQuery(searchInput);
+                setPagination(prev => ({ ...prev, page: 1 }));
+              }
+            }}
             className="filter-input"
           />
+          <button 
+            onClick={() => {
+              setSearchQuery(searchInput);
+              setPagination(prev => ({ ...prev, page: 1 }));
+            }}
+            className="btn btn-primary"
+            disabled={loading}
+          >
+            {loading ? '⏳' : '🔍'} Tìm kiếm
+          </button>
         </div>
 
         {/* Accounts Table */}

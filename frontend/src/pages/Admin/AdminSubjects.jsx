@@ -11,6 +11,7 @@ import '../Dashboard/Dashboard.css';
 const AdminSubjects = () => {
   const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingSubject, setEditingSubject] = useState(null);
   const [formData, setFormData] = useState({ tenMon: '', moTa: '' });
@@ -20,11 +21,12 @@ const AdminSubjects = () => {
     total: 0,
     totalPages: 0
   });
-  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState(''); // Giá trị thực sự dùng để gọi API
 
   useEffect(() => {
     loadSubjects();
-  }, [pagination.page, search]);
+  }, [pagination.page, searchQuery]);
 
   const loadSubjects = async () => {
     try {
@@ -32,7 +34,7 @@ const AdminSubjects = () => {
       const res = await subjectAPI.getSubjects({ 
         page: pagination.page, 
         limit: pagination.limit,
-        search: search || undefined 
+        search: searchQuery || undefined 
       });
       const subjectList = Array.isArray(res) ? res : (res?.data || []);
       setSubjects(subjectList);
@@ -54,6 +56,7 @@ const AdminSubjects = () => {
       toast.error('Không thể tải danh sách môn học');
     } finally {
       setLoading(false);
+      setInitialLoading(false);
     }
   };
 
@@ -100,8 +103,12 @@ const AdminSubjects = () => {
   };
 
   const handleSearchChange = (e) => {
-    setSearch(e.target.value);
-    setPagination(prev => ({ ...prev, page: 1 })); // Reset to page 1 on search
+    setSearchInput(e.target.value);
+  };
+
+  const handleSearch = () => {
+    setSearchQuery(searchInput);
+    setPagination(prev => ({ ...prev, page: 1 }));
   };
 
   const handlePageChange = (newPage) => {
@@ -110,7 +117,8 @@ const AdminSubjects = () => {
     }
   };
 
-  if (loading) return <DashboardLayout><div className="loading">Đang tải...</div></DashboardLayout>;
+  // Only show full loading screen on initial load
+  if (initialLoading) return <DashboardLayout><div className="loading">Đang tải...</div></DashboardLayout>;
 
   return (
     <DashboardLayout>
@@ -123,15 +131,23 @@ const AdminSubjects = () => {
         </div>
 
         {/* Search Bar */}
-        <div className="filter-section" style={{ marginBottom: '20px' }}>
+        <div className="filter-section" style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
           <input
             type="text"
             placeholder="Tìm kiếm môn học..."
-            value={search}
+            value={searchInput}
             onChange={handleSearchChange}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
             className="form-input"
             style={{ maxWidth: '400px' }}
           />
+          <button 
+            onClick={handleSearch}
+            className="btn btn-primary"
+            disabled={loading}
+          >
+            {loading ? '⏳' : '🔍'} Tìm kiếm
+          </button>
         </div>
 
         {/* Subjects Grid */}

@@ -11,16 +11,18 @@ const StudentClasses = () => {
   const [classes, setClasses] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [filters, setFilters] = useState({
     search: '',
     maMon: '',
-    trangThai: 'DangTuyen', // Fixed: changed from 'MoMoi' to match enum
+    trangThai: 'DangTuyen',
   });
   const navigate = useNavigate();
 
+  // Chỉ load data lần đầu khi vào trang
   useEffect(() => {
     loadData();
-  }, [filters]); // Add filters dependency to reload when filters change
+  }, []);
 
   const loadData = async () => {
     try {
@@ -36,19 +38,29 @@ const StudentClasses = () => {
       console.error('Failed to load data:', err);
     } finally {
       setLoading(false);
+      setInitialLoading(false);
     }
   };
 
-  const handleSearch = (e) => {
+  const handleSearch = async (e) => {
     e.preventDefault();
-    loadData();
+    try {
+      setLoading(true);
+      const classRes = await apiClient.get('/lop-hoc', { params: filters });
+      setClasses(classRes.data.data || []);
+    } catch (err) {
+      console.error('Failed to search:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleRegister = (classId) => {
     navigate(`/student/class/${classId}`);
   };
 
-  if (loading) return <DashboardLayout><div className="loading">Đang tải...</div></DashboardLayout>;
+  // Chỉ hiển thị loading screen lần đầu
+  if (initialLoading) return <DashboardLayout><div className="loading">Đang tải...</div></DashboardLayout>;
 
   return (
     <DashboardLayout>
@@ -85,7 +97,9 @@ const StudentClasses = () => {
               <option value="DangTuyen">Đang Tuyển</option>
               <option value="DangDay">Đang Dạy</option>
             </select>
-            <button type="submit" className="btn btn-primary">Tìm kiếm</button>
+            <button type="submit" className="btn btn-primary" disabled={loading}>
+              {loading ? '⏳ Đang tìm...' : 'Tìm kiếm'}
+            </button>
           </form>
         </div>
 

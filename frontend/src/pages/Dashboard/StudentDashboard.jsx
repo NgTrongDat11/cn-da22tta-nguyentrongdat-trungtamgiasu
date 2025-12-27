@@ -70,7 +70,7 @@ const StudentDashboard = () => {
                 <div key={reg.maDangKy} className="list-item">
                   <div>
                     <h3>{reg.lopHoc?.tenLop}</h3>
-                    <p>Gia sư: {reg.lopHoc?.giaSu?.hoTen}</p>
+                    <p>Gia sư: {reg.lopHoc?.hopDongs?.[0]?.giaSu?.hoTen || 'Chưa có'}</p>
                   </div>
                   <span className={`badge badge-${reg.trangThai.toLowerCase()}`}>
                     {reg.trangThai}
