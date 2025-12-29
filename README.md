@@ -1,16 +1,16 @@
-# 🎓 Trung Tâm Gia Sư (Tutoring Center Platform)
+# 🎓 Trung Tâm Gia Sư
 
-Nền tảng kết nối học viên với gia sư trực tuyến - **Full-stack production application**.
+Nền tảng kết nối học viên với gia sư trực tuyến.
 
 ## ✨ Tính năng
 
 ### 👨‍🎓 Học Viên
 
 - ✅ Đăng ký & đăng nhập với JWT authentication
-- ✅ Quản lý hồ sơ cá nhân (thông tin, hình ảnh)
+- ✅ Quản lý hồ sơ cá nhân (thông tin, và đổi mật khẩu)
 - ✅ Tìm kiếm và đăng ký lớp học theo môn
 - ✅ Xem danh sách lớp học đã đăng ký
-- ✅ Đánh giá gia sư sau khóa học
+- ✅ Xem đánh giá của gia sư
 - ✅ Dashboard theo dõi tiến độ học tập
 
 ### 👨‍🏫 Gia Sư
@@ -49,7 +49,6 @@ Nền tảng kết nối học viên với gia sư trực tuyến - **Full-stack
 - **Prisma ORM** - Database toolkit
 - **JWT** - Authentication
 - **bcryptjs** - Password hashing
-- **MinIO** - File storage (avatar uploads)
 
 ### Database
 - **PostgreSQL 16** - Primary database
@@ -285,19 +284,19 @@ LopHoc  (1:N) → DanhGia
 
 **LopHoc (Classes):**
 ```
-DangTuyen → DangDay → HoanThanh
+DangTuyen → DangDay
            ↘ DaHuy
 ```
 
 **DangKy (Registrations):**
 ```
-ChoDuyet → DaDuyet → HoanThanh
+ChoDuyet → DaDuyet
          ↘ TuChoi
 ```
 
 **HopDongGiangDay (Contracts):**
 ```
-DangChoDuyet → DaDuyet → DangThucHien → HoanThanh
+DangChoDuyet → DaDuyet → DangThucHien
              ↘ BiTuChoi ↘ DaHuy
 ```
 
@@ -466,7 +465,7 @@ Container orchestration với Docker Compose:
 
 ---
 
-## � Environment Variables
+##  Environment Variables
 
 ### Backend `.env`
 
@@ -495,13 +494,7 @@ MINIO_BUCKET=avatars
 ```env
 VITE_API_URL=http://localhost:5000/api
 ```
-
 > ⚠️ **Security**: Đổi `JWT_SECRET` trong production!
-
----
-
-## � Key Features Implementation
-
 ### Authentication & Authorization
 - JWT-based authentication với Bearer token
 - Role-based access control (Admin, GiaSu, HocVien)
@@ -527,19 +520,6 @@ VITE_API_URL=http://localhost:5000/api
 - Role-based dashboards
 - Responsive design
 
----
-
-## 🚀 Production Deployment
-
-### Pre-deployment Checklist
-- [ ] Update JWT_SECRET trong production .env
-- [ ] Configure PostgreSQL cho production
-- [ ] Setup MinIO hoặc cloud storage cho avatars
-- [ ] Enable CORS cho production domain
-- [ ] Build frontend: `npm run build`
-- [ ] Run database migrations: `npm run prisma:migrate:deploy`
-- [ ] Test all critical endpoints
-
 ### Docker Production
 ```bash
 # Build production images
@@ -552,7 +532,6 @@ docker-compose -f docker-compose.prod.yml up -d
 docker-compose -f docker-compose.prod.yml exec backend npm run prisma:migrate:deploy
 ```
 
----
 
 ## 📝 Documentation
 
@@ -562,29 +541,3 @@ docker-compose -f docker-compose.prod.yml exec backend npm run prisma:migrate:de
 | [backend/HUONG_DAN.md](backend/HUONG_DAN.md) | Backend implementation guide |
 | [backend/README.md](backend/README.md) | Backend-specific documentation |
 | [frontend/README.md](frontend/README.md) | Frontend-specific documentation |
-
----
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create feature branch: `git checkout -b feature/AmazingFeature`
-3. Commit changes: `git commit -m 'Add some AmazingFeature'`
-4. Push to branch: `git push origin feature/AmazingFeature`
-5. Open Pull Request
-
----
-
-## 📄 License
-
-This project is for educational purposes.
-
----
-
-## 👥 Contact & Support
-
-For questions or issues, please open an issue on GitHub.
-
----
-
-**Built with ❤️ using React, Node.js, PostgreSQL & Docker**
