@@ -531,13 +531,3 @@ docker-compose -f docker-compose.prod.yml up -d
 # Run migrations
 docker-compose -f docker-compose.prod.yml exec backend npm run prisma:migrate:deploy
 ```
-
-
-## 📝 Documentation
-
-| File | Description |
-|------|-------------|
-| [backend/DATABASE.md](backend/DATABASE.md) | Database schema & Prisma details |
-| [backend/HUONG_DAN.md](backend/HUONG_DAN.md) | Backend implementation guide |
-| [backend/README.md](backend/README.md) | Backend-specific documentation |
-| [frontend/README.md](frontend/README.md) | Frontend-specific documentation |
